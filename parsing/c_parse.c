@@ -83,7 +83,7 @@ long date_to_long(int year, int month,  int day,
 	switch (freq)
 	{
 		case FR_Y:    return (year - 1970);
-		case FR_MTH:  return ((year - 1970) * 12 + month);
+		case FR_MTH:  return ((year - 1970) * 12 + (month - 1));
 		case FR_D:    return (((year - 1970) * 365.25) + (28 * (month - 1)) +
 							   (day - 1));
 		default:      return 0;
