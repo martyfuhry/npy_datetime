@@ -31,6 +31,10 @@ This is a pretty rough directory structure. The only real important code as of n
 
 Seting up the Parse Dates
 --------------------
+Navigate to the parsing directory, since the other code is unimportant as of now.
+
+	$ cd parsing
+
 Just like every other distutils:
 	
 	$ python setup.py build
