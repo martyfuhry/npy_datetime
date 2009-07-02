@@ -2,6 +2,8 @@ import parsedates as p
 import Parser_ts  as dt_parse
 import datetime
 
+from numpy.testing import *
+
 p.set_callback(dt_parse.DateTimeFromString)
 
 freqs = ["Y", "M", "W", "B", "D", 
@@ -17,258 +19,184 @@ class TestCreation():
 	def test_post_epoch_year(self):
 		"Test creation of years post epoch."
 		
-		# Test 1970 - 1979
-		dlist = ['197%i' % i for i in range(0, 10)]
-		for i in range(0,9):
-			assert p.date_to_long(dlist[i], "Y") == i
+		dstring = '1970'
+		assert_equal(p.date_to_long(dstring, 'Y'), 0)
 
-		# Test 1980 - 1989
-		dlist = ['198%i' % i for i in range(0, 10)]
-		for i in range(0,9):
-			assert p.date_to_long(dlist[i], "Y") == 10 + i
+		dstring = '1980'
+		assert_equal(p.date_to_long(dstring, 'Y'), 10)
 
-		# Test 1990 - 1999
-		dlist = ['197%i' % i for i in range(0, 10)]
-		for i in range(0,9):
-			assert p.date_to_long(dlist[i], "Y") == 20 + i
-
-		# Test 2000 - 2009
-		dlist = ['200%i' % i for i in range(0, 10)]
-		for i in range(0,9):
-			assert p.date_to_long(dlist[i], "Y") == 30 + i
+		dstring = '2010'
+		assert_equal(p.date_to_long(dstring, 'Y'), 40)
 
 	def test_post_epoch_month(self):
 		"Test creation of months post epoch."
 	
-		# Test 1970
-		dlist = ['1970-%02i' % i for i in range(1, 13)]
-		for i in range(0,11):
-			assert p.date_to_long(dlist[i], "M") == i
+		dstring = '1970-01'
+		assert_equal(p.date_to_long(dstring, 'M'), 0)
 
-		# Test 1980
-		dlist = ['1980-%02i' % i for i in range(1, 13)]
-		for i in range(0,11):
-			assert p.date_to_long(dlist[i], "M") == 120 + i
+		dstring = '1970-12'
+		assert_equal(p.date_to_long(dstring, 'M'), 11)
 
-		# Test 1990
-		dlist = ['1990-%02i' % i for i in range(1, 13)]
-		for i in range(0,11):
-			assert p.date_to_long(dlist[i], "M") == 240 + i
+		dstring = '1980-01'
+		assert_equal(p.date_to_long(dstring, 'M'), 120)
 
-		# Test 2000
-		dlist = ['2000-%02i' % i for i in range(1, 13)]
-		for i in range(0,11):
-			assert p.date_to_long(dlist[i], "M") == 360 + i
+		dstring = '1996-02'
+		assert_equal(p.date_to_long(dstring, 'M'), 313)
 
 	def test_post_epoch_week(self):
 		"Test creation of weeks post epoch."
 
-		# Test Week 1, 1970
-		dlist = ['1970-01-%02i' % i for i in range(1,8)]
-		for i in range(0,6):
-			assert p.date_to_long(dlist[i], "W") == 1
+		dstring = '1970-01-01'
+		assert_equal(p.date_to_long(dstring, 'W'), 0)
+		
+		dstring = '1970-03-05'
+		assert_equal(p.date_to_long(dstring, 'W'), 9)
 
-		# Test Week 10, 1970
-		dlist = ['1970-03-%02i' % i for i in range(5,12)]
-		for i in range(0,6):
-			assert p.date_to_long(dlist[i], "W") == 10
-
-		# Test Week 471 in 1980
-		dlist = ['1980-01-%02i' % i for i in range(4,11)]
-		for i in range(0,6):
-			assert p.date_to_long(dlist[i], "W") == 471
-
+		dstring = '1980-01-04' 
+		assert_equal(p.date_to_long(dstring, "W"), 470)
 
 	def test_post_epoch_business_day(self):
 		"Test creation of business days post epoch."
 		# Not sure how to get test numbers yet...
-		assert False
-
+		dstring = '1970-01-01 00:00:00.00000'
+		assert_raises(NotImplementedError, p.date_to_long, dstring, "B")
 
 	def test_post_epoch_day(self):
 		"Test creation of days post epoch."
 
-		# Test January 1970 
-		dlist = ['1970-01-%02i' % i for i in range(1, 32)]
-		for i in range(0,30):
-			assert p.date_to_long(dlist[i], "D") == i
+		dstring = '1970-01-01'
+		assert_equal(p.date_to_long(dstring, 'D'), 0)
 
-		# Test December 1970 
-		dlist = ['1970-12-%02i' % i for i in range(1, 32)]
-		for i in range(0,30):
-			assert p.date_to_long(dlist[i], "D") == 335 + i
+		dstring = '1970-12-01'
+		assert_equal(p.date_to_long(dstring, 'D'), 334)
 
-		# Test January 1980 
-		dlist = ['1980-01-%02i' % i for i in range(1, 32)]
-		for i in range(0,30):
-			assert p.date_to_long(dlist[i], "D") == 3288 + i
+		dstring = '1980-01-01'
+		assert_equal(p.date_to_long(dstring, 'D'), 3652)
 
-		# Test June 1980 
-		dlist = ['1980-06-%02i' % i for i in range(1, 31)]
-		for i in range(0,29):
-			assert p.date_to_long(dlist[i], "D") == 3439 + i
+		dstring = '1990-06-10'
+		assert_equal(p.date_to_long(dstring, 'D'), 7465)
 
-		# Test June 1990 
-		dlist = ['1990-06-%02i' % i for i in range(1, 31)]
-		for i in range(0,29):
-			assert p.date_to_long(dlist[i], "D") == 7092 + i
+		dstring = '2000-01-01'
+		assert_equal(p.date_to_long(dstring, 'D'), 10957)
 
-		# Test May 2000 
-		dlist = ['2000-05-%02i' % i for i in range(1, 32)]
-		for i in range(0,30):
-			assert p.date_to_long(dlist[i], "D") == 10713 + i
-
-		# Test January 2010
-		dlist = ['2010-01-%02i' % i for i in range(1, 32)]
-		for i in range(0,30):
-			assert p.date_to_long(dlist[i], "D") == 14245 + i
+		dstring = '2004-12-31'
+		assert_equal(p.date_to_long(dstring, 'D'), 12783)
 
 	def test_post_epoch_hour(self):
 		"Test creation of hours post epoch."
 
-		# Test January 1, 1970
-		dlist = ['1970-01-01 %02i:00:00' % i for i in range(0,24)]
-		for i in range(0,23):
-			assert p.date_to_long(dlist[i], "h") == 1 + i
-
-		# Test February 1, 1970
-		dlist = ['1970-02-01 %02i:00:00' % i for i in range(0,24)]
-		for i in range(0,23):
-			assert p.date_to_long(dlist[i], "h") == 745 + i
-
-		# Test December 1, 1975
-		dlist = ['1975-12-01 %02i:00:00' % i for i in range(0,24)]
-		for i in range(0,23):
-			assert p.date_to_long(dlist[i], "h") == 51941 + i
-
-		# Test December 31, 1975
-		dlist = ['1975-12-31 %02i:00:00' % i for i in range(0,24)]
-		for i in range(0,23):
-			assert p.date_to_long(dlist[i], "h") == 52561 + i
-
-		# Test May 10, 1981
-		dlist = ['1981-05-10 %02i:00:00' % i for i in range(0,24)]
-		for i in range(0,23):
-			assert p.date_to_long(dlist[i], "h") == 99529 + i
-
-		# Test January 1, 2000
-		dlist = ['2000-01-01 %02i:00:00' % i for i in range(0,24)]
-		for i in range(0,23):
-			assert p.date_to_long(dlist[i], "h") == 262969 + i
-
-		# Test March 25, 2009
-		dlist = ['2009-05-25 %02i:00:00' % i for i in range(0,24)]
-		for i in range(0,23):
-			assert p.date_to_long(dlist[i], "h") == 345337 + i
+		dstring = '1970-01-01 00:00:00'
+		assert_equal(p.date_to_long(dstring, 'h'), 0)
 		
-		# Test January 1, 2010
-		dlist = ['2010-01-01 %02i:00:00' % i for i in range(0,24)]
-		for i in range(0,23):
-			assert p.date_to_long(dlist[i], "h") == 350641 + i
+		dstring = '1970-02-01 12:00:00'
+		assert_equal(p.date_to_long(dstring, 'h'), 756)
 
-		# Test January 1, 2060
-		dlist = ['2060-01-01 %02i:00:00' % i for i in range(0,24)]
-		for i in range(0,23):
-			assert p.date_to_long(dlist[i], "h") == 788929 + i
-		
+		dstring = '1970-10-25 00:00:00'
+		assert_equal(p.date_to_long(dstring, 'h'), 7128)
+
+		dstring = '1975-12-31 23:00:00'
+		assert_equal(p.date_to_long(dstring, 'h'), 52583)
+
+		dstring = '2001-01-01 01:00:00'
+		assert_equal(p.date_to_long(dstring, 'h'), 271753)
+
+		dstring = '2010-05-01 12:00:00'
+		assert_equal(p.date_to_long(dstring, 'h'), 353532)
 
 	def test_post_epoch_minute(self):
 		"Test creation of minutes post epoch."
 
-		# Test January 1, 1970 (00:00:00 to 00:59:00)
-		dlist = ['1970-01-01 00:%02i:00' % i for i in range(0,60)]
-		for i in range(0,59):
-			assert p.date_to_long(dlist[i], "m") == 1 + i
+		dstring = '1970-01-01 00:00:00'
+		assert_equal(p.date_to_long(dstring, 'm'), 0)
 
-		# Test January 1, 1970 (12:00:00 to 12:59:00)
-		dlist = ['1970-01-01 12:%02i:00' % i for i in range(0,60)]
-		for i in range(0,59):
-			assert p.date_to_long(dlist[i], "m") == 721 + i
+		dstring = '1970-01-01 12:00:00'
+		assert_equal(p.date_to_long(dstring, 'm'), 720)
 
-		# Test January 1, 1970 (23:00:00 to 23:59:00)
-		dlist = ['1970-01-01 23:%02i:00' % i for i in range(0,60)]
-		for i in range(0,59):
-			assert p.date_to_long(dlist[i], "m") == 1381 + i
+		dstring = '1970-05-01 00:00:00'
+		assert_equal(p.date_to_long(dstring, 'm'), 172800)
+		
+		dstring = '1971-01-01 00:01:00'
+		assert_equal(p.date_to_long(dstring, 'm'), 525601)
 
-		# Test January 1, 1971 (00:00:00 to 00:59:00)
-		dlist = ['1971-01-01 00:%02i:00' % i for i in range(0,60)]
-		for i in range(0,59):
-			assert p.date_to_long(dlist[i], "m") == 525601 + i
+		dstring = '1975-01-01 23:59:00'
+		assert_equal(p.date_to_long(dstring, 'm'), 2630879)
 
-		# Test December 1, 1971 (00:00:00 to 00:59:00)
-		dlist = ['1970-12-01 00:%02i:00' % i for i in range(0,60)]
-		for i in range(0,59):
-			assert p.date_to_long(dlist[i], "m") == 1006561 + i
-
-		# Test December 31, 1980 (06:00:00 to 06:59:00)
-		dlist = ['1970-12-31 00:%02i:00' % i for i in range(0,60)]
-		for i in range(0,59):
-			assert p.date_to_long(dlist[i], "m") == 5784481 + i
-
-		# Test May 10, 2000 (00:00:00 to 00:59:00)
-		dlist = ['2000-10-01 00:%02i:00' % i for i in range(0,60)]
-		for i in range(0,59):
-			assert p.date_to_long(dlist[i], "m") == 15965281 + i
-
-		# Test August 1, 2010 (15:00:00 to 15:59:00)
-		dlist = ['2010-08-01 15:%02i:00' % i for i in range(0,60)]
-		for i in range(0,59):
-			assert p.date_to_long(dlist[i], "m") == 21344581 + i
+		dstring = '2000-11-12 01:30'
+		assert_equal(p.date_to_long(dstring, 'm'), 16233210)
 
 	def test_post_epoch_second(self):
 		"Test creation of seconds post epoch."
 
-		# Test January 1, 1970 (00:00:00 to 00:00:59)
-		dlist = ['1970-01-01 00:00:%02i' % i for i in range(0,60)]
-		for i in range(0,59):
-			assert p.date_to_long(dlist[i], "m") == 1 + i
+		dstring = '1970-01-01 00:00:00'
+		assert_equal(p.date_to_long(dstring, 's'), 0)
 
-		# Test January 1, 1970 (23:59:00 to 23:59:59)
-		dlist = ['1970-01-01 23:59:%02i' % i for i in range(0,60)]
-		for i in range(0,59):
-			assert p.date_to_long(dlist[i], "m") == 86341 + i
+		dstring = '1970-02-01 00:00:00'
+		assert_equal(p.date_to_long(dstring, 's'), 2678400)
 
-		# Test January 1, 1980 (00:00:00 to 00:00:59)
-		dlist = ['1980-01-01 00:00:%02i' % i for i in range(0,60)]
-		for i in range(0,59):
-			assert p.date_to_long(dlist[i], "m") == 315532801 + i
+		dstring = '1972-01-01 12:30:01'
+		assert_equal(p.date_to_long(dstring, 's'), 63117001)
 
-		# Test Febuary 15, 1999 (00:01:00 to 00:01:59)
-		dlist = ['1999-02-15 00:01:%02i' % i for i in range(0,60)]
-		for i in range(0,59):
-			assert p.date_to_long(dlist[i], "m") == 919036861 + i
+		dstring = '1980-12-31 23:00:10'
+		assert_equal(p.date_to_long(dstring, 's'), 347151610)
 
-		# Test December 31, 2008 (23:59:00 to 23:59:59)
-		dlist = ['2008-12-31 23:59:%02i' % i for i in range(0,60)]
-		for i in range(0,59):
-			assert p.date_to_long(dlist[i], "m") == 1230767941 + i
+		dstring = '2000-01-01 00:00:00'
+		assert_equal(p.date_to_long(dstring, 's'), 946684800)
+
+		dstring = '2010-12-20 18:58:29'
+		assert_equal(p.date_to_long(dstring, 's'), 1292871509)
 
 	def test_post_epoch_millisecond(self):
 		"Test creation of milliseconds post epoch."
-		assert False
+		
+		dstring = '1970-01-01 00:00:00.000'
+		assert_equal(p.date_to_long(dstring, 'ms'), 0)
+
+		dstring = '1970-01-01 12:00:00.020'
+		assert_equal(p.date_to_long(dstring, 'ms'), 43200020)
+
+		dstring = '1980-01-01 00:00:00.111'
+		assert_equal(p.date_to_long(dstring, 'ms'), 315532800111)
+
+		dstring = '1981-08-15 03:48:28.847'
+		assert_equal(p.date_to_long(dstring, 'ms'), 366695308847)
+
+		dstring = '2001-11-27 23:59:59.999'
+		assert_equal(p.date_to_long(dstring, 'ms'), 1006905599999)
+
+		dstring = '2002-02-11 22:10:08.001'
+		assert_equal(p.date_to_long(dstring, 'ms'), 1013465408001)
 
 	def test_post_epoch_microsecond(self):
 		"Test creation of microseconds post epoch."
-		assert False
+
+		dstring = '1970-01-01 00:00:00.00'
+		assert_equal(p.date_to_long(dstring, 'us'), 0)
 
 	def test_post_epoch_nanosecond(self):
 		"Test creation of nanoseconds post epoch."
-		assert False
+		
+		dstring = '1970-01-01 00:00:00.00000'
+		assert_raises(NotImplementedError, p.date_to_long, dstring, "ns")
+
 	def test_post_epoch_picosecond(self):
 		"Test creation of picoseconds post epoch."
-		assert False
+
+		dstring = '1970-01-01 00:00:00.00000'
+		assert_raises(NotImplementedError, p.date_to_long, dstring, "ps")
 
 	def test_post_epoch_femtosecond(self):
 		"Test creation of femtoseconds post epoch."
-		assert False
+	
+		dstring = '1970-01-01 00:00:00.00000'
+		assert_raises(NotImplementedError, p.date_to_long, dstring, "fs")
+
 
 	def test_post_epoch_attosecond(self):
 		"Test creation of attoseconds post epoch."
-		assert False
 
+		dstring = '1970-01-01 00:00:00.00000'
+		assert_raises(NotImplementedError, p.date_to_long, dstring, "as")
 
-	def test_ones(self):
-		"Test January 1, 1970 at XXX is 0 for each frequency"
-		for f in freqs:
-			assert p.date_to_long("01/01/1970 00:00:00", f) == 1
+	def tests_post_epoch_leapyears(self):
+		"Test years with leap days."
 
