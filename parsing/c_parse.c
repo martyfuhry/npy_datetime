@@ -315,7 +315,7 @@ long datetime_to_long(PyObject* datetime, int frequency)
 {
 	int year = 0, month = 0, day = 0, hour = 0, 
 		minute = 0, second = 0, microsecond = 0;
-
+	
 	// Get the time units from PyDateTime
 	year        = PyDateTime_GET_YEAR(datetime);
 	month       = PyDateTime_GET_MONTH(datetime);
@@ -324,85 +324,94 @@ long datetime_to_long(PyObject* datetime, int frequency)
 	minute      = PyDateTime_DATE_GET_MINUTE(datetime);
 	second      = PyDateTime_DATE_GET_SECOND(datetime);
 	microsecond = PyDateTime_DATE_GET_MICROSECOND(datetime);
-	
+
+	// The return value
+	long result = 0;
+
 	int leap = (year % 4 == 0) ? 1 : 0;
-	
+
 	// These calculations depend on the frequency
 	switch (frequency)
 	{
 		case FR_Y:
-			return year - 1970;
+			result = year - 1970;
+			break;
 		case FR_M:
 			// Positive number if year >= 1970
 			if (year >= 1970)
-				return (year - 1970) * 12 + month - 1;
+				result = (year - 1970) * 12 + month - 1;
 			else
-				return (year - 1970) * 12 - (12 - month) + 1;
+				result = (year - 1970) * 12 - (12 - month) + 1;
+			break;
 		case FR_W:
 			// Positive number if year >= 1970
 			if (year >= 1970)
-				return absdays_from_ymd(year, month, day) / 7;
+				result = absdays_from_ymd(year, month, day) / 7;
+			break;
 		case FR_B:
 			PyErr_SetString(PyExc_NotImplementedError, "business day not implemented");
-			return 0;
+			result = 0;
 			// I'll think about this one
 			break;
 		case FR_D:
 			// Positive number if year >= 1970
 			if (year >= 1970)
-				return absdays_from_ymd(year, month, day);
+				result = absdays_from_ymd(year, month, day);
 			else
-				return (year - 1970) * 365.25
-			   		+ (365 - month_offset[leap][month - 1])
+				result = (year - 1970) * 365.25
+				   	+ (365 - month_offset[leap][month - 1])
 				   	+ (days_in_month[leap][month - 1] - day);	
+			break;
 		case FR_h:
 			// Positive number if year >= 1970
 			if (year >= 1970)
 			{
-				return absdays_from_ymd(year, month, day) * 24 
+				result = absdays_from_ymd(year, month, day) * 24 
 				   	+ hour;
 			}
 			else
 			{
-				return (year - 1970) * 365.25 * 24
+				result = (year - 1970) * 365.25 * 24
 				   	+ (365 - month_offset[leap][month - 1]) * 24
 				   	+ (days_in_month[leap][month - 1] * 24 - hour);
 			}
+			break;
 		case FR_m:
 			if (year >= 1970)
-				return absdays_from_ymd(year, month, day) * 1440 
+				result = absdays_from_ymd(year, month, day) * 1440 
 				   	+ hour * 60
 				   	+ minute;
+			break;
 		case FR_s:
 			if (year >= 1970)
-				return absdays_from_ymd(year, month, day) * 86400
+				result = absdays_from_ymd(year, month, day) * 86400
 				 	+ abssecs_from_hms(hour, minute, second);
+			break;
 		case FR_ms:
 			if (year >= 1970)
-				return absdays_from_ymd(year, month, day) * 86400000
+				result = absdays_from_ymd(year, month, day) * 86400000
 				 	+ abssecs_from_hms(hour, minute, second) * 1000
 				 	+ (microsecond / 1000);
+			break;
 		case FR_us:
 			if (year >= 1970)
-				return absdays_from_ymd(year, month, day) * 86400000000
+				result = absdays_from_ymd(year, month, day) * 86400000000
 				 	+ abssecs_from_hms(hour, minute, second) * 1000000
 				 	+ microsecond;
-		
-		//  ////////////////////
+			break;
 		// Starting from here, we need extra units (ns, ps, fs, as)
 		//  for correct precision
-		//  ////////////////////
-
 		case FR_ns:
 		case FR_ps:
 		case FR_fs:
 		case FR_as:
-			// Raise the NotImplementedError for the previous frequencies
 			PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
-			return 0;
-		default: return 0;
+			result = 0;
+			break;
+		default: result = 0;
 	}
-
+	
+	return result;
 }
 
 // Takes a string object as the date, and a string as frequency, 
@@ -429,7 +438,7 @@ long datestring_to_long(PyObject *string, int frequency)
 	//  to datetime_to_long
 	if (datetime)
 	{
-		return result;
+		result = datetime_to_long(datetime, frequency);
 	}
 	else
 	{
@@ -502,8 +511,7 @@ date_to_long(PyObject *self, PyObject *args)
 		PyErr_SetString(PyExc_TypeError, "invalid date type");
 		return NULL;
 	}
-	
-	// Check if an error occured in either of the parsing functions
+
 	if (PyErr_Occurred())
 		return NULL;
 
@@ -515,8 +523,6 @@ date_to_long(PyObject *self, PyObject *args)
 // module
 // ============
 
-
-// Sets which methods are callable by Python
 static PyMethodDef methods[] = {
 	{"set_callback", (PyCFunction)set_callback, 
 	 METH_VARARGS, ""},
@@ -532,7 +538,6 @@ initparsedates(void)
 {
 	PyObject *parser;
 
-	// Initialize the parsedates module (mainly for testing)
 	parser = Py_InitModule("parsedates", methods);
 	if (parser == NULL)
 		return;
