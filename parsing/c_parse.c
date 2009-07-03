@@ -504,7 +504,7 @@ date_to_long(PyObject *self, PyObject *args)
 	}
 	
 	// Check if an error occured in either of the parsing functions
-	if (PyErr_Occured())
+	if (PyErr_Occurred())
 		return NULL;
 
 	return result;
