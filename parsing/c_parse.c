@@ -21,6 +21,10 @@
 // For defaults and errors
 #define FR_ERR  -1
 
+// Offset for number of days between Jan 1, 1970 and Jan 1, 0001
+#define DAYS_EPOCH 719163
+
+
 int freq_to_int(char* freq)
 {
 	// Absurdidly stupid way of doing this. Should be changed later.
@@ -110,8 +114,14 @@ test_callback()
 	return result;
 }
 
+PyObject *DateCalc_RangeError = NULL;
+PyObject *DateCalc_Error      = NULL;
+/*
+====================================================
+== Beginning of section borrowed from mx.DateTime ==
+====================================================
+*/
 
-//DERIVED FROM mx.DateTime
 /*
     Functions in the following section are borrowed from mx.DateTime version
     2.0.6, and hence this code is subject to the terms of the egenix public
@@ -120,12 +130,6 @@ test_callback()
 
 #define Py_AssertWithArg(x,errortype,errorstr,a1) {if (!(x)) {PyErr_Format(errortype,errorstr,a1);goto onError;}}
 #define Py_Error(errortype,errorstr) {PyErr_SetString(errortype,errorstr);goto onError;}
-
- /* Error Exception objects */
-static PyObject *DateCalc_Error;
-static PyObject *DateCalc_RangeError;
-
-#define SECONDS_PER_DAY ((double) 86400.0)
 
 /* Table with day offsets for each month (0-based, without and with leap) */
 static int month_offset[2][13] = {
@@ -146,85 +150,71 @@ int is_leapyear(register long year)
     return (year % 4 == 0) && ((year % 100 != 0) || (year % 400 == 0));
 }
 
-/*
- * static
-int dInfoCalc_ISOWeek(struct date_info *dinfo)
-{
-    int week;
-
-  * Estimate *
-    week = (dinfo->day_of_year-1) - dinfo->day_of_week + 3;
-    if (week >= 0) week = week / 7 + 1;
-
-    * Verify *
-    if (week < 0) {
-        * The day lies in last week of the previous year *
-        if ((week > -2) ||
-            (week == -2 && dInfoCalc_Leapyear(dinfo->year-1, dinfo->calendar)))
-            week = 53;
-        else
-            week = 52;
-    } else if (week == 53) {
-    * Check if the week belongs to year or year+1 *
-        if (31-dinfo->day + dinfo->day_of_week < 3) {
-            week = 1;
-        }
-    }
-
-    return week;
-}
-*/
-
 
 /* Return the day of the week for the given absolute date. */
 static
-int dInfoCalc_DayOfWeek(register long absdate)
+int day_of_week(register long absdate)
 {
     int day_of_week;
 
-    if (absdate >= 1) {
-        day_of_week = (absdate - 1) % 7;
-    } else {
-        day_of_week = 6 - ((-absdate) % 7);
-    }
+    if (absdate >= 1) 
+        day_of_week = (absdate + DAYS_EPOCH- 1) % 7;
+    else 
+        day_of_week = 6 - ((-absdate + DAYS_EPOCH) % 7);
+    
     return day_of_week;
 }
 
 /* Return the year offset, that is the absolute date of the day
    31.12.(year-1) in the given calendar.
-
-   Note:
-   For the Julian calendar we shift the absdate (which is measured
-   using the Gregorian Epoch) value by two days because the Epoch
-   (0001-01-01) in the Julian calendar lies 2 days before the Epoch in
-   the Gregorian calendar. */
+*/
 static
-int year_offset(register long year)
+long year_offset(register long year)
 {
     year--;
     if (year >= 0 || -1/4 == -1)
         return year*365 + year/4 - year/100 + year/400;
     else
         return year*365 + (year-3)/4 - (year-99)/100 + (year-399)/400;
-    
-	Py_Error(DateCalc_Error, "unknown calendar");
- onError:
-    return -1;
+}    
+
+static
+int week_from_ady(long absdate, int day, int year)
+{
+    int week, dotw, day_of_year;
+	dotw = day_of_week(absdate);
+	day_of_year = (int)(absdate - year_offset(year) + DAYS_EPOCH);
+
+    // Estimate
+    week = (day_of_year - 1) - dotw + 3;
+    if (week >= 0) 
+		week = week / 7 + 1;
+
+    // Verify 
+    if (week < 0) 
+	{
+        // The day lies in last week of the previous year 
+        if ((week > -2) || ((week == -2) && (is_leapyear(year-1))))
+            week = 53;
+        else
+            week = 52;
+    } 
+	else if (week == 53) 
+	{
+    	// Check if the week belongs to year or year + 1 
+        if ((31 - day + dotw) < 3) 
+            week = 1;
+    }
+
+    return week;
 }
 
-
-/* Set the instance's value using the given date and time. calendar
-   may be set to the flags: GREGORIAN_CALENDAR,
-   JULIAN_CALENDAR to indicate the calendar to be used. */
 
 // Modified version of mxDateTime function
 // Returns absolute number of days since Jan 1, 1970
 static
 long absdays_from_ymd(int year, int month, int day)
 {
-
-	// Offset for number of days between Jan 1, 1970 and Jan 1, 0001
-	#define DAYS_EPOCH 719163
 
     /* Calculate the absolute date */
     int leap;
@@ -254,6 +244,8 @@ long absdays_from_ymd(int year, int month, int day)
 				 day);
 
 	// Number of days between (year - 1) and 1970
+	// !! This is a bad implementation: if year_offset overflows a long, we lose a potential
+	//     of DAYS_EPOCH days range
     yearoffset = year_offset(year) - DAYS_EPOCH;
 
     if (PyErr_Occurred()) goto onError;
@@ -277,28 +269,6 @@ long abssecs_from_hms(int hour, int minute, int second)
 }
 
 
-/* Sets the time part of the DateTime object. */
-static
-int dInfoCalc_SetFromAbsTime( double abstime)
-{
-    int inttime;
-    int hour,minute;
-    double second;
-
-    inttime = (int)abstime;
-    hour = inttime / 3600;
-    minute = (inttime % 3600) / 60;
-    second = abstime - (double)(hour*3600 + minute*60);
-
-	/*
-    dinfo->hour = hour;
-    dinfo->minute = minute;
-    dinfo->second = second;
-
-    dinfo->abstime = abstime;
-	*/
-    return 0;
-}
 /*
 ====================================================
 == End of section borrowed from mx.DateTime       ==
@@ -328,89 +298,99 @@ long datetime_to_long(PyObject* datetime, int frequency)
 	// The return value
 	long result = 0;
 
+	// The absolute number of days since 1970
+	long absdays = absdays_from_ymd(year, month, day);
+
 	int leap = (year % 4 == 0) ? 1 : 0;
 
 	// These calculations depend on the frequency
-	switch (frequency)
+	// I hate switches. I'm switching to if else if statements
+	if (frequency == FR_Y)
 	{
-		case FR_Y:
-			result = year - 1970;
-			break;
-		case FR_M:
-			// Positive number if year >= 1970
-			if (year >= 1970)
-				result = (year - 1970) * 12 + month - 1;
-			else
-				result = (year - 1970) * 12 - (12 - month) + 1;
-			break;
-		case FR_W:
-			// Positive number if year >= 1970
-			if (year >= 1970)
-				result = absdays_from_ymd(year, month, day) / 7;
-			break;
-		case FR_B:
-			PyErr_SetString(PyExc_NotImplementedError, "business day not implemented");
-			result = 0;
-			// I'll think about this one
-			break;
-		case FR_D:
-			// Positive number if year >= 1970
-			if (year >= 1970)
-				result = absdays_from_ymd(year, month, day);
-			else
-				result = (year - 1970) * 365.25
-				   	+ (365 - month_offset[leap][month - 1])
-				   	+ (days_in_month[leap][month - 1] - day);	
-			break;
-		case FR_h:
-			// Positive number if year >= 1970
-			if (year >= 1970)
-			{
-				result = absdays_from_ymd(year, month, day) * 24 
-				   	+ hour;
-			}
-			else
-			{
-				result = (year - 1970) * 365.25 * 24
-				   	+ (365 - month_offset[leap][month - 1]) * 24
-				   	+ (days_in_month[leap][month - 1] * 24 - hour);
-			}
-			break;
-		case FR_m:
-			if (year >= 1970)
-				result = absdays_from_ymd(year, month, day) * 1440 
-				   	+ hour * 60
-				   	+ minute;
-			break;
-		case FR_s:
-			if (year >= 1970)
-				result = absdays_from_ymd(year, month, day) * 86400
-				 	+ abssecs_from_hms(hour, minute, second);
-			break;
-		case FR_ms:
-			if (year >= 1970)
-				result = absdays_from_ymd(year, month, day) * 86400000
-				 	+ abssecs_from_hms(hour, minute, second) * 1000
-				 	+ (microsecond / 1000);
-			break;
-		case FR_us:
-			if (year >= 1970)
-				result = absdays_from_ymd(year, month, day) * 86400000000
-				 	+ abssecs_from_hms(hour, minute, second) * 1000000
-				 	+ microsecond;
-			break;
-		// Starting from here, we need extra units (ns, ps, fs, as)
-		//  for correct precision
-		case FR_ns:
-		case FR_ps:
-		case FR_fs:
-		case FR_as:
-			PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
-			result = 0;
-			break;
-		default: result = 0;
+		result = year - 1970;
 	}
-	
+	else if (frequency == FR_M) {
+		if (year >= 1970)
+			result = (year - 1970) * 12 + month - 1;
+		else
+			result = (year - 1970) * 12 - (12 - month) + 1;
+	}
+	else if (frequency == FR_W) {
+		// 3 day offset for 1970 to get to Sunday
+		result = (absdays + 3) / 7;
+			//result =  (year_offset(year) - DAYS_EPOCH) / 7 + week_from_ady(absdays, day, year) - 1;
+	}
+	else if (frequency == FR_B) {
+		PyErr_SetString(PyExc_NotImplementedError, "business day not implemented");
+		result = 0;
+		// I'll think about this one
+	}
+	else if (frequency == FR_D) {
+		if (year >= 1970)
+			result = absdays;
+		else
+			result = (year - 1970) * 365.25
+			   	+ (365 - month_offset[leap][month - 1])
+			   	+ (days_in_month[leap][month - 1] - day);	
+	}
+	else if (frequency == FR_h) {
+		if (year >= 1970)
+		{
+			result = absdays * 24 + hour;
+		}
+		else
+		{
+			result = (year - 1970) * 365.25 * 24
+			   	+ (365 - month_offset[leap][month - 1]) * 24
+			   	+ (days_in_month[leap][month - 1] * 24 - hour);
+		}
+	}
+	else if (frequency == FR_m) {
+		if (year >= 1970)
+			result = absdays * 1440 
+			   	+ hour * 60
+			   	+ minute;
+	}
+	else if (frequency == FR_s) {
+		if (year >= 1970)
+			result = absdays * 86400
+			 	+ abssecs_from_hms(hour, minute, second);
+	}
+	else if (frequency == FR_ms) {
+		if (year >= 1970)
+			result = absdays * 86400000
+			 	+ abssecs_from_hms(hour, minute, second) * 1000
+			 	+ (microsecond / 1000);
+	}
+	else if (frequency == FR_us) {
+		if (year >= 1970)
+			result = absdays * 86400000000
+			 	+ abssecs_from_hms(hour, minute, second) * 1000000
+			 	+ microsecond;
+	}
+	// Starting from here, we need extra units (ns, ps, fs, as)
+	//  for correct precision
+	else if (frequency == FR_ns) {
+		PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
+		result = 0;
+	}
+	else if (frequency == FR_ps) {
+		PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
+		result = 0;
+	}
+	else if (frequency == FR_fs) {
+		PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
+		result = 0;
+	}
+	else if (frequency == FR_as) {
+		PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
+		result = 0;
+	}
+	else {
+		// Throw some Not Valid Frequency error here
+		result = 0;
+	}	
+
 	return result;
 }
 
