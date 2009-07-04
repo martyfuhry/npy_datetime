@@ -157,10 +157,11 @@ int day_of_week(register long absdate)
 {
     int day_of_week;
 
+	// Add in three for the Thursday on Jan 1, 1970 (epoch offset)
     if (absdate >= 1) 
-        day_of_week = (absdate + DAYS_EPOCH- 1) % 7;
+        day_of_week = (absdate + 3) % 7;
     else 
-        day_of_week = 6 - ((-absdate + DAYS_EPOCH) % 7);
+        day_of_week = 6 - ((-absdate + 3) % 7);
     
     return day_of_week;
 }
@@ -304,36 +305,25 @@ long datetime_to_long(PyObject* datetime, int frequency)
 	int leap = (year % 4 == 0) ? 1 : 0;
 
 	// These calculations depend on the frequency
-	// I hate switches. I'm switching to if else if statements
+
 	if (frequency == FR_Y)
 	{
 		result = year - 1970;
-	}
-	else if (frequency == FR_M) {
-		if (year >= 1970)
-			result = (year - 1970) * 12 + month - 1;
-		else
-			result = (year - 1970) * 12 - (12 - month) + 1;
-	}
-	else if (frequency == FR_W) {
+	} else if (frequency == FR_M) {
+		result = (year - 1970) * 12 + month - 1;
+	} else if (frequency == FR_W) {
 		// 3 day offset for 1970 to get to Sunday
 		result = (absdays + 3) / 7;
-			//result =  (year_offset(year) - DAYS_EPOCH) / 7 + week_from_ady(absdays, day, year) - 1;
-	}
-	else if (frequency == FR_B) {
-		PyErr_SetString(PyExc_NotImplementedError, "business day not implemented");
-		result = 0;
-		// I'll think about this one
-	}
-	else if (frequency == FR_D) {
+	} else if (frequency == FR_B) {
+		 result = ((absdays + 3) / 7) * 5 + (day_of_week(absdays)) % 6 - 3;
+	} else if (frequency == FR_D) {
 		if (year >= 1970)
 			result = absdays;
 		else
 			result = (year - 1970) * 365.25
 			   	+ (365 - month_offset[leap][month - 1])
 			   	+ (days_in_month[leap][month - 1] - day);	
-	}
-	else if (frequency == FR_h) {
+	} else if (frequency == FR_h) {
 		if (year >= 1970)
 		{
 			result = absdays * 24 + hour;
@@ -344,25 +334,21 @@ long datetime_to_long(PyObject* datetime, int frequency)
 			   	+ (365 - month_offset[leap][month - 1]) * 24
 			   	+ (days_in_month[leap][month - 1] * 24 - hour);
 		}
-	}
-	else if (frequency == FR_m) {
+	} else if (frequency == FR_m) {
 		if (year >= 1970)
 			result = absdays * 1440 
 			   	+ hour * 60
 			   	+ minute;
-	}
-	else if (frequency == FR_s) {
+	} else if (frequency == FR_s) {
 		if (year >= 1970)
 			result = absdays * 86400
 			 	+ abssecs_from_hms(hour, minute, second);
-	}
-	else if (frequency == FR_ms) {
+	} else if (frequency == FR_ms) {
 		if (year >= 1970)
 			result = absdays * 86400000
 			 	+ abssecs_from_hms(hour, minute, second) * 1000
 			 	+ (microsecond / 1000);
-	}
-	else if (frequency == FR_us) {
+	} else if (frequency == FR_us) {
 		if (year >= 1970)
 			result = absdays * 86400000000
 			 	+ abssecs_from_hms(hour, minute, second) * 1000000
@@ -373,20 +359,16 @@ long datetime_to_long(PyObject* datetime, int frequency)
 	else if (frequency == FR_ns) {
 		PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
 		result = 0;
-	}
-	else if (frequency == FR_ps) {
+	} else if (frequency == FR_ps) {
 		PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
 		result = 0;
-	}
-	else if (frequency == FR_fs) {
+	} else if (frequency == FR_fs) {
 		PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
 		result = 0;
-	}
-	else if (frequency == FR_as) {
+	} else if (frequency == FR_as) {
 		PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
 		result = 0;
-	}
-	else {
+	} else {
 		// Throw some Not Valid Frequency error here
 		result = 0;
 	}	
