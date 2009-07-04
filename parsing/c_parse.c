@@ -311,11 +311,10 @@ long datetime_to_long(PyObject* datetime, int frequency)
 	} else if (frequency == FR_M) {
 		result = (year - 1970) * 12 + month - 1;
 	} else if (frequency == FR_W) {
-		// 3 day offset for 1970 to get to Sunday
-		result = (absdays + 3) / 7;
+		// 4 day offset for post 1970 to get to Sunday
+		int dotw = day_of_week(absdays);
+		result = (absdays > 0) ? (absdays + 4) / 7 : (absdays - dotw + 1) / 7;
 	} else if (frequency == FR_B) {
-		int epoch_offset = (absdays < 5) ? 0 : 1;
-		//result = absdays - (((absdays + 3) / 7) * 2);
 		int dotw = day_of_week(absdays);
 		result = (absdays > 3) ? ((absdays - dotw) / 7) * 5 + dotw - (dotw / 6) + 1: dotw - 4 - (dotw / 6);
 	} else if (frequency == FR_D) {
@@ -351,7 +350,7 @@ long datetime_to_long(PyObject* datetime, int frequency)
 			 	+ abssecs_from_hms(hour, minute, second) * 1000
 			 	+ (microsecond / 1000);
 	} else if (frequency == FR_us) {
-		if (year >= 1970)
+		//if (year >= 1970)
 			result = absdays * 86400000000
 			 	+ abssecs_from_hms(hour, minute, second) * 1000000
 			 	+ microsecond;
