@@ -722,7 +722,7 @@ def DateTimeFromString(text):
                                                          timestyle)
 
     try:
-        microsecond = int(1000000 * (second % 1))
+        microsecond = int(round(1000000 * (second % 1)))
         second = int(second)
         return dt.datetime(year,month,day,hour,minute,second, microsecond) - \
                                         dt.timedelta(minutes=offset)
