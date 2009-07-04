@@ -158,10 +158,10 @@ int day_of_week(register long absdate)
     int day_of_week;
 
 	// Add in three for the Thursday on Jan 1, 1970 (epoch offset)
-    if (absdate >= 1) 
-        day_of_week = (absdate + 3) % 7;
+    if (absdate >= 0) 
+        day_of_week = (absdate + 4) % 7;
     else 
-        day_of_week = 6 - ((-absdate + 3) % 7);
+        day_of_week = 6 - ((-absdate + 4) % 7);
     
     return day_of_week;
 }
@@ -306,8 +306,7 @@ long datetime_to_long(PyObject* datetime, int frequency)
 
 	// These calculations depend on the frequency
 
-	if (frequency == FR_Y)
-	{
+	if (frequency == FR_Y) {
 		result = year - 1970;
 	} else if (frequency == FR_M) {
 		result = (year - 1970) * 12 + month - 1;
@@ -315,7 +314,10 @@ long datetime_to_long(PyObject* datetime, int frequency)
 		// 3 day offset for 1970 to get to Sunday
 		result = (absdays + 3) / 7;
 	} else if (frequency == FR_B) {
-		 result = ((absdays + 3) / 7) * 5 + (day_of_week(absdays)) % 6 - 3;
+		int epoch_offset = (absdays < 5) ? 0 : 1;
+		//result = absdays - (((absdays + 3) / 7) * 2);
+		int dotw = day_of_week(absdays);
+		result = (absdays > 3) ? ((absdays - dotw) / 7) * 5 + dotw - (dotw / 6) + 1: dotw - 4 - (dotw / 6);
 	} else if (frequency == FR_D) {
 		if (year >= 1970)
 			result = absdays;
