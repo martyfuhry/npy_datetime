@@ -161,7 +161,7 @@ int day_of_week(register long absdate)
     if (absdate >= 0) 
         day_of_week = (absdate + 4) % 7;
     else 
-        day_of_week = 6 - ((-absdate + 4) % 7);
+        day_of_week = 6 - ((-absdate + 2) % 7);
     
     return day_of_week;
 }
@@ -313,50 +313,30 @@ long datetime_to_long(PyObject* datetime, int frequency)
 	} else if (frequency == FR_W) {
 		// 4 day offset for post 1970 to get to Sunday
 		int dotw = day_of_week(absdays);
-		result = (absdays > 0) ? (absdays + 4) / 7 : (absdays - dotw + 1) / 7;
+		result = (absdays >= 0) ? (absdays + 4) / 7 : (absdays - dotw) / 7;
 	} else if (frequency == FR_B) {
 		int dotw = day_of_week(absdays);
-		result = (absdays > 3) ? ((absdays - dotw) / 7) * 5 + dotw - (dotw / 6) + 1: dotw - 4 - (dotw / 6);
+		if (year >= 1970)
+			result = (absdays > 3) ? ((absdays - dotw) / 7) * 5 + dotw - (dotw / 6) + 1: dotw - 4 - (dotw / 6);
+		else
+			result = (absdays < -4) ? ((absdays + 7 - dotw) / 7) * 5 - (6 - dotw) + dotw / 6 : -2 + dotw;
 	} else if (frequency == FR_D) {
-		if (year >= 1970)
-			result = absdays;
-		else
-			result = (year - 1970) * 365.25
-			   	+ (365 - month_offset[leap][month - 1])
-			   	+ (days_in_month[leap][month - 1] - day);	
+		result = absdays;
 	} else if (frequency == FR_h) {
-		if (year >= 1970)
-		{
-			result = absdays * 24 + hour;
-		}
-		else
-		{
-			result = (year - 1970) * 365.25 * 24
-			   	+ (365 - month_offset[leap][month - 1]) * 24
-			   	+ (days_in_month[leap][month - 1] * 24 - hour);
-		}
+		result = absdays * 24 + hour;
 	} else if (frequency == FR_m) {
-		if (year >= 1970)
-			result = absdays * 1440 
-			   	+ hour * 60
-			   	+ minute;
+		result = absdays * 1440 + hour * 60 + minute;
 	} else if (frequency == FR_s) {
-		if (year >= 1970)
-			result = absdays * 86400
-			 	+ abssecs_from_hms(hour, minute, second);
+		result = absdays * 86400 + abssecs_from_hms(hour, minute, second);
 	} else if (frequency == FR_ms) {
-		if (year >= 1970)
-			result = absdays * 86400000
-			 	+ abssecs_from_hms(hour, minute, second) * 1000
+		result = absdays * 86400000 + abssecs_from_hms(hour, minute, second) * 1000
 			 	+ (microsecond / 1000);
 	} else if (frequency == FR_us) {
-		//if (year >= 1970)
-			result = absdays * 86400000000
-			 	+ abssecs_from_hms(hour, minute, second) * 1000000
+		result = absdays * 86400000000 + abssecs_from_hms(hour, minute, second) * 1000000
 			 	+ microsecond;
 	}
 	// Starting from here, we need extra units (ns, ps, fs, as)
-	//  for correct precision
+	//  for correct precision: datetime doesn't include beyond microsecond
 	else if (frequency == FR_ns) {
 		PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
 		result = 0;

@@ -209,6 +209,19 @@ class TestCreation():
 	def test_pre_epoch_business(self):
 		"Test creation of business days pre epoch."
 
+		dstring = '1969-12-31'
+		assert_equal(p.date_to_long(dstring, "B"), -1)
+
+		dstring = '1969-12-30'
+		assert_equal(p.date_to_long(dstring, "B"), -2)
+
+		dstring = '1969-12-29'
+		assert_equal(p.date_to_long(dstring, "B"), -3)
+
+		dstring = '1969-12-28'
+		assert_equal(p.date_to_long(dstring, "B"), -3)
+
+
 	def test_post_epoch_business_day(self):
 		"Test creation of business days post epoch."
 		
@@ -246,6 +259,33 @@ class TestCreation():
 	def test_pre_epoch_day(self):
 		"Test creation of days pre epoch."
 
+		dstring = '1969-12-31'
+		assert_equal(p.date_to_long(dstring, 'D'), -1)
+
+		dstring = '1969-12-30'
+		assert_equal(p.date_to_long(dstring, 'D'), -2)
+
+		dstring = '1969-01-01'
+		assert_equal(p.date_to_long(dstring, 'D'), -365)
+
+		dstring = '1960-02-01'
+		assert_equal(p.date_to_long(dstring, 'D'), -3622)
+
+		dstring = '1900-01-30'
+		assert_equal(p.date_to_long(dstring, 'D'), -25538)
+
+		dstring = '1700-10-05'
+		assert_equal(p.date_to_long(dstring, 'D'), -98338)
+
+		dstring = '1000-06-02'
+		assert_equal(p.date_to_long(dstring, 'D'), -354133)
+
+		dstring = '0900-12-31'
+		assert_equal(p.date_to_long(dstring, 'D'), -390445)
+
+		dstring = '0001-01-01'
+		assert_equal(p.date_to_long(dstring, 'D'), -719162)
+
 	def test_post_epoch_day(self):
 		"Test creation of days post epoch."
 
@@ -273,6 +313,34 @@ class TestCreation():
 	# HOUR
 	def test_pre_epoch_hour(self):
 		"Test creation of hours pre epoch."
+
+		dstring = '1969-12-31 23:00:00'
+		assert_equal(p.date_to_long(dstring, 'h'), -1)
+
+		dstring = '1969-12-31 00:00:00'
+		assert_equal(p.date_to_long(dstring, 'h'), -24)
+
+		dstring = '1969-01-01 00:00:00'
+		assert_equal(p.date_to_long(dstring, 'h'), -8760)
+
+		dstring = '1959-03-01 12:00:00'
+		assert_equal(p.date_to_long(dstring, 'h'), -95004)
+
+		dstring = '1900-11-10 01:00:00'
+		assert_equal(p.date_to_long(dstring, 'h'), -606095)
+
+		dstring = '1800-01-01 20:00:00'
+		assert_equal(p.date_to_long(dstring, 'h'), -1490164)
+
+		dstring = '1750-01-31 00:00:00'
+		assert_equal(p.date_to_long(dstring, 'h'), -1927752)
+
+		dstring = '1600-10-10 10:00:00'
+		assert_equal(p.date_to_long(dstring, 'h'), -3236558)
+
+		dstring = '0001-01-01 00:00:00'
+		assert_equal(p.date_to_long(dstring, 'h'), -17259888)
+
 	def test_post_epoch_hour(self):
 		"Test creation of hours post epoch."
 
@@ -300,6 +368,10 @@ class TestCreation():
 	# MINUTE
 	def test_pre_epoch_minute(self):
 		"Test creation of minutes pre epoch."
+
+		dstring = '1969-12-31 23:59:00'
+		assert_equal(p.date_to_long(dstring, 'm'), -1)
+
 	def test_post_epoch_minute(self):
 		"Test creation of minutes post epoch."
 
