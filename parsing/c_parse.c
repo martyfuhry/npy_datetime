@@ -302,6 +302,7 @@ long datetime_to_long(PyObject* datetime, int frequency)
 	// The absolute number of days since 1970
 	long absdays = absdays_from_ymd(year, month, day);
 
+	// 1 for leap, 0 for no leap
 	int leap = (year % 4 == 0) ? 1 : 0;
 
 	// These calculations depend on the frequency
@@ -311,15 +312,40 @@ long datetime_to_long(PyObject* datetime, int frequency)
 	} else if (frequency == FR_M) {
 		result = (year - 1970) * 12 + month - 1;
 	} else if (frequency == FR_W) {
-		// 4 day offset for post 1970 to get to Sunday
+		// 4 day offset for post 1970 to get correct week
 		int dotw = day_of_week(absdays);
-		result = (absdays >= 0) ? (absdays + 4) / 7 : (absdays - dotw) / 7;
+		if (absdays >= 0)
+			result = (absdays + 4) / 7;
+		else
+			// XXX INCORRECT XXX //
+			result = absdays - dotw / 7;
 	} else if (frequency == FR_B) {
 		int dotw = day_of_week(absdays);
-		if (year >= 1970)
-			result = (absdays > 3) ? ((absdays - dotw) / 7) * 5 + dotw - (dotw / 6) + 1: dotw - 4 - (dotw / 6);
-		else
-			result = (absdays < -4) ? ((absdays + 7 - dotw) / 7) * 5 - (6 - dotw) + dotw / 6 : -2 + dotw;
+		// Post epoch
+		if (year >= 1970) {
+			// To get to Sunday, Jan 4, 1970
+			// number of weeks * 5 + dotw [0-6] - Saturdays + 1 for offset
+			if (absdays > 2)
+				result = ((absdays - dotw) / 7) * 5 + dotw - (dotw / 6) + 1;
+			else 
+				result = dotw - 4 - (dotw / 6);
+		// Pre epoch
+		} else {
+			// To get to Sunday, Dec 28, 1969
+			if (absdays < -4) {
+				// Offset by 1 for Sundays
+				if (dotw)
+					result = ((absdays + 7 - dotw) / 7) * 5 - (6 - dotw) - 3;
+				else
+					result = ((absdays + 7 - dotw) / 7) * 5 - (6 - dotw) - 2;
+			} else {
+				// Offset by 1 for Sundays
+				if (dotw)
+					result = -4 + dotw;
+				else
+					result = -3; // Sunday, Dec 28, 1969
+			}
+		}
 	} else if (frequency == FR_D) {
 		result = absdays;
 	} else if (frequency == FR_h) {
