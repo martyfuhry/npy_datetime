@@ -1,0 +1,24 @@
+Completed
+-----
+1. Pre Epoch Calculations / Tests:
+* Year, Month, Week, Business Day, Day, Hour, Minute
+
+2. Post Epoch Calculations / Tests:
+* Year, Month, Week, Business Day, Day, Hour, Minute, Second, Millisecond, Microsecond
+
+Working On
+-----
+1. Pre Epoch Tests:
+* Second, Millisecond, Microsecond
+2. Leap Year Tests
+3. Out of Range Tests
+
+Known Issues
+-----
+1. Parsing Issues
+* Current datetime model can not specify Nanosecond, Picosecond, Femtosecond, and Attosecond 
+* Some rare parsing issues (Nothing to get too excited about just yet...)
+2. September, 1752 Calendar change
+* Current code ignores the change, assumes September 3 - 13, 1752 exists and acts accordingly
+3. C Long
+* Exactly what C type is this? A longlong? int64? (I'll look into typedefing it for now, so it's not a big deal until I write Out of Range Tests.)
