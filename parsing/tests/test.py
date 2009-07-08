@@ -6,13 +6,12 @@ from numpy.testing import *
 
 p.set_callback(dt_parse.DateTimeFromString)
 
-freqs = ["Y", "M", "W", "B", "D", 
-		 "h", "m", "s", "ms", "us", 
-		 "ns", "ps", "fs", "as"]
-
-# All test numbers were pulled from the SciKits TimeSeries Module (example):
+# All test numbers were pulled from either the SciKits TimeSeries Module (example):
 #    >>> print t.Date("Minute", "1970-01-10").value
 #    12961
+# or the Unix date command (example):
+#    $ date -d "1000-01-01 00:00:01 GMT" +%s
+#    -30610223999
 
 class TestCreation():
 # Test each frequencies' creation and proper value
@@ -119,43 +118,38 @@ class TestCreation():
 		dstring = '1851-05-18'
 		assert_equal(p.date_to_long(dstring, 'W'), -6189)
 
-		dstring = '1000-01-06'
+		dstring = '1000-01-05'
 		assert_equal(p.date_to_long(dstring, 'W'), -50611)
 
-		dstring = '1000-01-07'
-		assert_equal(p.date_to_long(dstring, 'W'), -50610)
+		dstring = '1000-01-04'
+		assert_equal(p.date_to_long(dstring, 'W'), -50612)
 
 		dstring = '0912-04-18'
 		assert_equal(p.date_to_long(dstring, 'W'), -55188)
 
 		dstring = '0912-04-19'
-		assert_equal(p.date_to_long(dstring, 'W'), -55187)
+		assert_equal(p.date_to_long(dstring, 'W'), -55188)
 
 		dstring = '0912-04-20'
-		assert_equal(p.date_to_long(dstring, 'W'), -55187)
+		assert_equal(p.date_to_long(dstring, 'W'), -55188)
 
 		dstring = '0912-04-21'
-		assert_equal(p.date_to_long(dstring, 'W'), -55187)
+		assert_equal(p.date_to_long(dstring, 'W'), -55188)
 
 		dstring = '0912-04-22'
-		assert_equal(p.date_to_long(dstring, 'W'), -55187)
+		assert_equal(p.date_to_long(dstring, 'W'), -55188)
 
 		dstring = '0912-04-23'
-		assert_equal(p.date_to_long(dstring, 'W'), -55187)
+		assert_equal(p.date_to_long(dstring, 'W'), -55188)
 
 		dstring = '0912-04-24'
 		assert_equal(p.date_to_long(dstring, 'W'), -55187)
 
-		dstring = '0912-04-25'
-		assert_equal(p.date_to_long(dstring, 'W'), -55187)
+		dstring = '0010-01-10'
+		assert_equal(p.date_to_long(dstring, 'W'), -102266)
 
-		dstring = '0010-01-04'
+		dstring = '0010-01-09'
 		assert_equal(p.date_to_long(dstring, 'W'), -102267)
-
-		dstring = '0010-01-03'
-		assert_equal(p.date_to_long(dstring, 'W'), -102268)
-
-
 
 	def test_post_epoch_week(self):
 		"Test creation of weeks post epoch."
@@ -221,6 +215,42 @@ class TestCreation():
 		dstring = '1969-12-28'
 		assert_equal(p.date_to_long(dstring, "B"), -3)
 
+		dstring = '1969-12-27'
+		assert_equal(p.date_to_long(dstring, "B"), -3)
+
+		dstring = '1969-12-26'
+		assert_equal(p.date_to_long(dstring, "B"), -4)
+
+		dstring = '1969-12-22'
+		assert_equal(p.date_to_long(dstring, "B"), -8)
+
+		dstring = '1969-12-21'
+		assert_equal(p.date_to_long(dstring, "B"), -8)
+
+		dstring = '1969-01-01'
+		assert_equal(p.date_to_long(dstring, "B"), -261)
+
+		dstring = '1900-10-15'
+		assert_equal(p.date_to_long(dstring, "B"), -18058)
+
+		dstring = '1403-05-02'
+		assert_equal(p.date_to_long(dstring, "B"), -147838)
+
+		dstring = '1403-05-01'
+		assert_equal(p.date_to_long(dstring, "B"), -147838)
+
+		dstring = '1403-04-30'
+		assert_equal(p.date_to_long(dstring, "B"), -147838)
+
+		dstring = '0100-12-26'
+		assert_equal(p.date_to_long(dstring, "B"), -487603)
+
+		dstring = '0100-12-27'
+		assert_equal(p.date_to_long(dstring, "B"), -487603)
+
+		dstring = '0001-01-01'
+		assert_equal(p.date_to_long(dstring, "B"), -513688)
+
 
 	def test_post_epoch_business_day(self):
 		"Test creation of business days post epoch."
@@ -232,6 +262,9 @@ class TestCreation():
 		assert_equal(p.date_to_long(dstring, "B"), 1)
 	
 		dstring = '1970-01-03'
+		assert_equal(p.date_to_long(dstring, "B"), 1)
+	
+		dstring = '1970-01-04'
 		assert_equal(p.date_to_long(dstring, "B"), 1)
 	
 		dstring = '1970-01-09'
@@ -372,6 +405,36 @@ class TestCreation():
 		dstring = '1969-12-31 23:59:00'
 		assert_equal(p.date_to_long(dstring, 'm'), -1)
 
+		dstring = '1969-12-31 23:00:00'
+		assert_equal(p.date_to_long(dstring, 'm'), -60)
+
+		dstring = '1969-12-31 20:00:00'
+		assert_equal(p.date_to_long(dstring, 'm'), -240)
+
+		dstring = '1969-11-30 00:00:00'
+		assert_equal(p.date_to_long(dstring, 'm'), -46080)
+
+		dstring = '1960-01-01 00:00:00'
+		assert_equal(p.date_to_long(dstring, 'm'), -5260320)
+
+		dstring = '1900-10-15 12:20:00'
+		assert_equal(p.date_to_long(dstring, 'm'), -36402460)
+
+		dstring = '1800-01-01 00:01:00'
+		assert_equal(p.date_to_long(dstring, 'm'), -89411039)
+
+		dstring = '1700-01-01 20:11:00'
+		assert_equal(p.date_to_long(dstring, 'm'), -142004389)
+
+		dstring = '1000-08-20 02:01:00'
+		assert_equal(p.date_to_long(dstring, 'm'), -509837639)
+
+		dstring = '0819-03-22 00:58:00'
+		assert_equal(p.date_to_long(dstring, 'm'), -605252102)
+
+		dstring = '0001-12-31 23:59:00'
+		assert_equal(p.date_to_long(dstring, 'm'), -1035067681)
+
 	def test_post_epoch_minute(self):
 		"Test creation of minutes post epoch."
 
@@ -399,6 +462,35 @@ class TestCreation():
 	# SECOND
 	def test_pre_epoch_second(self):
 		"Test creation of seconds pre epoch."
+
+		dstring = '1969-12-31 23:59:59'
+		assert_equal(p.date_to_long(dstring, 's'), -1)
+
+		dstring = '1969-12-31 23:59:00'
+		assert_equal(p.date_to_long(dstring, 's'), -60)
+
+		dstring = '1969-12-31 23:00:00'
+		assert_equal(p.date_to_long(dstring, 's'), -3600)
+
+		dstring = '1969-01-01 00:00:00'
+		assert_equal(p.date_to_long(dstring, 's'), -31536000)
+
+		dstring = '1960-02-28 01:01:01'
+		assert_equal(p.date_to_long(dstring, 's'), -310604339)
+
+		dstring = '1900-01-15 08:18:58'
+		assert_equal(p.date_to_long(dstring, 's'), -2207749262)
+
+		dstring = '1756-01-01 00:00:00'
+		assert_equal(p.date_to_long(dstring, 's'), -6753196800)
+
+		dstring = '1000-01-01 00:00:01'
+		assert_equal(p.date_to_long(dstring, 's'), -30610223999)
+
+		dstring = '0001-01-01 12:00:00'
+		assert_equal(p.date_to_long(dstring, 's'), -62135553600)
+
+
 	def test_post_epoch_second(self):
 		"Test creation of seconds post epoch."
 
@@ -484,6 +576,10 @@ class TestCreation():
 	# NANOSECOND
 	def test_pre_epoch_nanosecond(self):
 		"Test creation of nanoseconds pre epoch."
+
+		dstring = '1970-01-01 00:00:00.00000'
+		assert_raises(NotImplementedError, p.date_to_long, dstring, "ns")
+
 	def test_post_epoch_nanosecond(self):
 		"Test creation of nanoseconds post epoch."
 		
@@ -493,6 +589,10 @@ class TestCreation():
 	# PICOSECOND
 	def test_pre_epoch_picosecond(self):
 		"Test creation of picoseconds pre epoch."
+
+		dstring = '1970-01-01 00:00:00.00000'
+		assert_raises(NotImplementedError, p.date_to_long, dstring, "ps")
+
 	def test_post_epoch_picosecond(self):
 		"Test creation of picoseconds post epoch."
 
