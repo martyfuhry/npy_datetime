@@ -16,6 +16,10 @@ p.set_callback(dt_parse.DateTimeFromString)
 class TestCreation():
 # Test each frequencies' creation and proper value
 
+    ########################################################################
+    ## Tests for Frequencies
+    ########################################################################
+
     # YEAR
     def test_pre_epoch_year(self):
         "Test creation of years pre epoch."
@@ -695,21 +699,79 @@ class TestCreation():
         dstring = '1970-01-01 00:00:00.00000'
         assert_raises(NotImplementedError, p.date_to_long, dstring, "as")
 
+
+    ########################################################################
+    ## Tests for Leap Years
+    ########################################################################
+
     def test_pre_epoch_leapyears(self):
         "Test years with leap days pre epoch"
 
+		# Days
         dstring = '1968-02-29'
         assert_equal(p.date_to_long(dstring, 'D'), -672)
+        dstring = '1964-02-29'
+        assert_equal(p.date_to_long(dstring, 'D'), -2133)
+        dstring = '1004-02-29'
+        assert_equal(p.date_to_long(dstring, 'D'), -352766)
+        dstring = '1004-02-28'
+        assert_equal(p.date_to_long(dstring, 'D'), -352767)
+        dstring = '1004-03-01'
+        assert_equal(p.date_to_long(dstring, 'D'), -352765)
+        dstring = '0856-02-28'
+        assert_equal(p.date_to_long(dstring, 'D'), -406822)
+        dstring = '0856-02-29'
+        assert_equal(p.date_to_long(dstring, 'D'), -406821)
+        dstring = '0856-03-01'
+        assert_equal(p.date_to_long(dstring, 'D'), -406820)
+
+		# Business Days
+        dstring = '1968-02-29'
+        assert_equal(p.date_to_long(dstring, 'B'), -480)
+        dstring = '1968-03-01'
+        assert_equal(p.date_to_long(dstring, 'B'), -479)
+        dstring = '1964-02-29'
+        assert_equal(p.date_to_long(dstring, 'B'), -1523)
+        dstring = '1964-02-28'
+        assert_equal(p.date_to_long(dstring, 'B'), -1524)
+        dstring = '1964-03-01'
+        assert_equal(p.date_to_long(dstring, 'B'), -1523)
+        dstring = '1612-02-28'
+        assert_equal(p.date_to_long(dstring, 'B'), -93357)
+        dstring = '1612-02-29'
+        assert_equal(p.date_to_long(dstring, 'B'), -93356)
+        dstring = '1612-03-01'
+        assert_equal(p.date_to_long(dstring, 'B'), -93355)
 
     def test_post_epoch_leapyears(self):
         "Test years with leap days post epoch."
 
+        # Days
         dstring = '1972-02-29'
         assert_equal(p.date_to_long(dstring, 'D'), 789)
+        dstring = '2004-02-29'
+        assert_equal(p.date_to_long(dstring, 'D'), 12477)
+        dstring = '2036-02-29'
+        assert_equal(p.date_to_long(dstring, 'D'), 24165)
+        dstring = '2036-03-01'
+        assert_equal(p.date_to_long(dstring, 'D'), 24166)
+
+		# Business Days
+        dstring = '1972-02-28'
+        assert_equal(p.date_to_long(dstring, 'B'), 562)
+        dstring = '1980-02-29'
+        assert_equal(p.date_to_long(dstring, 'B'), 2651)
+        dstring = '2004-02-29'
+        assert_equal(p.date_to_long(dstring, 'B'), 8911)
+        dstring = '2132-02-29'
+        assert_equal(p.date_to_long(dstring, 'B'), 42306)
+
+    ########################################################################
+    ## Tests for September 1752
+    ########################################################################
 
     def test_september_1752(self):
        	"Assure September 3 - 13, 1752 exist." 
-
         # September 5, 1752 is a Sunday
         # Weeks
         dstring = '1752-11-03'
