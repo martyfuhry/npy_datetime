@@ -518,6 +518,40 @@ class TestCreation():
 	# MILLISECOND
 	def test_pre_epoch_millisecond(self):
 		"Test creation of milliseconds pre epoch."
+		
+		dstring = '1969-12-31 23:59:59.999'
+		assert_equal(p.date_to_long(dstring, 'ms'), -1)
+
+		dstring = '1969-12-31 23:59:59.000'
+		assert_equal(p.date_to_long(dstring, 'ms'), -1000)
+
+		dstring = '1969-12-31 23:59:00.000'
+		assert_equal(p.date_to_long(dstring, 'ms'), -60000)
+
+		dstring = '1969-12-31 23:00:00.000'
+		assert_equal(p.date_to_long(dstring, 'ms'), -3600000)
+
+		dstring = '1969-12-31 00:00:00.000'
+		assert_equal(p.date_to_long(dstring, 'ms'), -86400000)
+
+		dstring = '1969-01-01 00:00:00.500'
+		assert_equal(p.date_to_long(dstring, 'ms'), -31535999500)
+
+		dstring = '1900-08-10 15:10:08.800'
+		assert_equal(p.date_to_long(dstring, 'ms'), -2189839791200)
+
+		dstring = '1821-11-14 05:29:15.111'
+		assert_equal(p.date_to_long(dstring, 'ms'), -4674565844889)
+
+		dstring = '1751-01-28 12:12:12.121'
+		assert_equal(p.date_to_long(dstring, 'ms'), -6908586467879)
+
+		dstring = '1111-05-29 02:02:48.918'
+		assert_equal(p.date_to_long(dstring, 'ms'), -27094687031082)
+
+		dstring = '0001-01-01 12:14:38.398'
+		assert_equal(p.date_to_long(dstring, 'ms'), -62135552721602)
+
 	def test_post_epoch_millisecond(self):
 		"Test creation of milliseconds post epoch."
 		
@@ -548,6 +582,42 @@ class TestCreation():
 
 		dstring = '1969-12-31 23:59:59.999999'
 		assert_equal(p.date_to_long(dstring, 'us'), -1)
+
+		dstring = '1969-12-31 23:59:00.000000'
+		assert_equal(p.date_to_long(dstring, 'us'), -60000000)
+
+		dstring = '1969-12-31 23:00:00.000000'
+		assert_equal(p.date_to_long(dstring, 'us'), -3600000000)
+
+		dstring = '1969-12-31 00:00:00.000000'
+		assert_equal(p.date_to_long(dstring, 'us'), -86400000000)
+
+		dstring = '1969-12-20 00:00:00.000900'
+		assert_equal(p.date_to_long(dstring, 'us'), -1036799999100)
+
+		dstring = '1969-01-01 00:00:00.120012'
+		assert_equal(p.date_to_long(dstring, 'us'), -31535999879988)
+
+		dstring = '1960-10-30 18:47:58.183871'
+		assert_equal(p.date_to_long(dstring, 'us'), -289372321816129)
+
+		dstring = '1903-08-05 20:15:01.000001'
+		assert_equal(p.date_to_long(dstring, 'us'), -2095645498999999)
+
+		dstring = '1801-01-01 00:01:00.000000'
+		assert_equal(p.date_to_long(dstring, 'us'), -5333126340000000)
+
+		dstring = '1700-12-15 15:50:05.098512'
+		assert_equal(p.date_to_long(dstring, 'us'), -8490211794901488)
+
+		dstring = '1000-01-31 10:30:18.583018'
+		assert_equal(p.date_to_long(dstring, 'us'), -30607594181416982)
+
+		dstring = '0816-04-20 01:28:10.000010'
+		assert_equal(p.date_to_long(dstring, 'us'), -36407226709999990)
+
+		dstring = '0001-01-01 12:00:00.888801'
+		assert_equal(p.date_to_long(dstring, 'us'), -62135553599111199)
 
 	def test_post_epoch_microsecond(self):
 		"Test creation of microseconds post epoch."

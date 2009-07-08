@@ -317,8 +317,7 @@ long datetime_to_long(PyObject* datetime, int frequency)
 		if (absdays >= 0)
 			result = (absdays + 4) / 7;
 		else
-			// XXX INCORRECT XXX //
-			result = absdays - dotw / 7;
+			result = (absdays - dotw)/ 7;
 	} else if (frequency == FR_B) {
 		int dotw = day_of_week(absdays);
 		// Post epoch
@@ -331,7 +330,7 @@ long datetime_to_long(PyObject* datetime, int frequency)
 				result = dotw - 4 - (dotw / 6);
 		// Pre epoch
 		} else {
-			// To get to Sunday, Dec 28, 1969
+			// To get beyond Sunday, Dec 28, 1969
 			if (absdays < -4) {
 				// Offset by 1 for Sundays
 				if (dotw)
