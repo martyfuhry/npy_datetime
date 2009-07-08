@@ -698,6 +698,56 @@ class TestCreation():
     def test_pre_epoch_leapyears(self):
         "Test years with leap days pre epoch"
 
+        dstring = '1968-02-29'
+        assert_equal(p.date_to_long(dstring, 'D'), -672)
+
     def test_post_epoch_leapyears(self):
         "Test years with leap days post epoch."
+
+        dstring = '1972-02-29'
+        assert_equal(p.date_to_long(dstring, 'D'), 789)
+
+    def test_september_1752(self):
+       	"Assure September 3 - 13, 1752 exist." 
+
+        # September 5, 1752 is a Sunday
+        # Weeks
+        dstring = '1752-11-03'
+        assert_equal(p.date_to_long(dstring, 'W'), -11331)
+        dstring = '1752-11-04'
+        assert_equal(p.date_to_long(dstring, 'W'), -11331)
+        dstring = '1752-11-05'
+        assert_equal(p.date_to_long(dstring, 'W'), -11330)
+        dstring = '1752-11-06'
+        assert_equal(p.date_to_long(dstring, 'W'), -11330)
+        dstring = '1752-11-12'
+        assert_equal(p.date_to_long(dstring, 'W'), -11329)
+        dstring = '1752-11-13'
+        assert_equal(p.date_to_long(dstring, 'W'), -11329)
+
+        # Business Days
+        dstring = '1752-11-03'
+        assert_equal(p.date_to_long(dstring, 'B'), -56654) 
+        dstring = '1752-11-04'
+        assert_equal(p.date_to_long(dstring, 'B'), -56653) 
+        dstring = '1752-11-05'
+        assert_equal(p.date_to_long(dstring, 'B'), -56653) 
+        dstring = '1752-11-06'
+        assert_equal(p.date_to_long(dstring, 'B'), -56653) 
+        dstring = '1752-11-12'
+        assert_equal(p.date_to_long(dstring, 'B'), -56648) 
+        dstring = '1752-11-13'
+        assert_equal(p.date_to_long(dstring, 'B'), -56648) 
+
+        # Days
+        dstring = '1752-11-03'
+        assert_equal(p.date_to_long(dstring, 'D'), -79316) 
+        dstring = '1752-11-04'
+        assert_equal(p.date_to_long(dstring, 'D'), -79315) 
+        dstring = '1752-11-10'
+        assert_equal(p.date_to_long(dstring, 'D'), -79309) 
+        dstring = '1752-11-11'
+        assert_equal(p.date_to_long(dstring, 'D'), -79308) 
+        dstring = '1752-11-13'
+        assert_equal(p.date_to_long(dstring, 'D'), -79306) 
 
