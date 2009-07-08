@@ -1,15 +1,14 @@
 Completed
 -----
 1. Pre Epoch Calculations / Tests:
-* Year, Month, Week, Business Day, Day, Hour, Minute
+* Year, Month, Week, Business Day, Day, Hour, Minute, Second
 
 2. Post Epoch Calculations / Tests:
 * Year, Month, Week, Business Day, Day, Hour, Minute, Second, Millisecond, Microsecond
-
 Working On
 -----
 1. Pre Epoch Tests:
-* Second, Millisecond, Microsecond
+* Millisecond, Microsecond
 2. Leap Year Tests
 3. Out of Range Tests
 
