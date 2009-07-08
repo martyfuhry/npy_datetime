@@ -5,10 +5,14 @@ Completed
 
 2. Post Epoch Calculations / Tests:
 * Year, Month, Week, Business Day, Day, Hour, Minute, Second, Millisecond, Microsecond
+3. Leap Year Tests
+* Day, Business Day
+4. September 1752 Tests
+* Weeks, Business Days, Days
+
 Working On
 -----
-1. Leap Year Tests
-2. Out of Range Tests
+1. Out of Range Tests
 
 Known Issues
 -----
