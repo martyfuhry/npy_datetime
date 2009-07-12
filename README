@@ -1,10 +1,12 @@
 Summer of Code Project 2009
-Last modification to the README: 6/30/09
+Last modification to the README: 7/12/2009
+
+Dependencies
+-------------------
+Currently, the only dependency is the python developer package (python-dev from the Ubuntu repositories). This is required to create a python module out of a C program. 
 
 Directory Structure
 --------------------
-This is a pretty rough directory structure. The only real important code as of now is in the parsing directory.
-
 |-- parsing
 |   |-- Parser_orig.py
 	The original parser for the mxDateTime Parsing Module.
@@ -48,20 +50,18 @@ The module is called parsedates
 
 	>>> import parsedates as p
 
-Since the main goal of the parser is to use a Python program to parse, you need to set up the callback
+Since the main goal of the parser is to use a Python program to parse, you need to set up the callback (DateTimeFromString is located in the Parser_ts submodule in parsing/tests
 	
 	>>> import Parser_ts as dt_parse
 	>>> p.set_callback(dt_parse.DateTimeFromString)
 
-Now you can actually parse dates
+Now you can actually parse dates using date_to_long(datetime or datestring, freq)
 
-	>>> date = p.parse_date("01/01/1970", "D")
+	>>> date = p.date_to_long("01/01/1970", "D")
 
-date is a tuple: (long, long). 
+date_to_long is a wrapper for two functions (datetime_to_long and datestring_to_long). date_to_long decides which to run based on the first argument. It accepts either a Python DateTime object or a string formatted so DateTimeFromString can parse it into a Python DateTime object (see Parser_ts.py for examples on correct string formats).
 
 	>>>print date
-	(0L, 7L)
+	0L
 
-The first long is the number of units since the epoch. 
-The second long is the internal representation of the frequency. (7 is day, 9 is year, etc).
-This was the easiest way to diagnose what was going on, since the datetime array scalar doesn't exist quite yet
+date will not store the frequency (yet), but it formats the number based on the frequency (so storing frequency is trivial). The long represents the number of frequency units since Jan 1, 1970 (the Unix Epoch).
