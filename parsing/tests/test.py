@@ -17,7 +17,7 @@ class TestCreation():
 # Test each frequencies' creation and proper value
 
     ########################################################################
-    ## Tests for Frequencies
+    ## Frequency Tests
     ########################################################################
 
     # YEAR
@@ -701,7 +701,7 @@ class TestCreation():
 
 
     ########################################################################
-    ## Tests for Leap Years
+    ## Leap Year Tests
     ########################################################################
 
     def test_pre_epoch_leapyears(self):
@@ -767,7 +767,7 @@ class TestCreation():
         assert_equal(p.date_to_long(dstring, 'B'), 42306)
 
     ########################################################################
-    ## Tests for September 1752
+    ## September 1752 Tests
     ########################################################################
 
     def test_september_1752(self):
@@ -813,3 +813,9 @@ class TestCreation():
         dstring = '1752-11-13'
         assert_equal(p.date_to_long(dstring, 'D'), -79306) 
 
+    ########################################################################
+    ## Out of Range Tests
+    ########################################################################
+
+    def test_out_of_range(self):
+		"Test out of range dates."
