@@ -819,3 +819,49 @@ class TestCreation():
 
     def test_out_of_range(self):
 		"Test out of range dates."
+
+    ########################################################################
+    ## DateTime Tests
+    ########################################################################
+
+    def test_datetime(self):
+        "Test creation using datetime objects"
+        
+        # Testing datetime with Y, M, D
+        testdate = datetime.datetime(1970, 1, 1)
+        assert_equal(p.date_to_long(testdate, "Y"), 0)
+		
+        testdate = datetime.datetime(1971, 1, 1)
+        assert_equal(p.date_to_long(testdate, "Y"), 1)
+		
+        testdate = datetime.datetime(1969, 1, 1)
+        assert_equal(p.date_to_long(testdate, "Y"), -1)
+		
+        testdate = datetime.datetime(1971, 1, 1)
+        assert_equal(p.date_to_long(testdate, "M"), 12)
+		
+        testdate = datetime.datetime(1971, 10, 18)
+        assert_equal(p.date_to_long(testdate, "M"), 21)
+	
+        # Testing datetime with Y, M, D, h, m, s
+        testdate = datetime.datetime(1970, 1, 1, 1, 0, 0)
+        assert_equal(p.date_to_long(testdate, "h"), 1)
+		
+        testdate = datetime.datetime(1970, 1, 1, 0, 10, 0)
+        assert_equal(p.date_to_long(testdate, "m"), 10)
+		
+        testdate = datetime.datetime(1970, 1, 1, 0, 11, 10)
+        assert_equal(p.date_to_long(testdate, "s"), 670)
+	
+        # Testing datetime with Y, M, D, h, m, s, us
+        testdate = datetime.datetime(1970, 1, 1, 0, 0, 0, 1000)
+        assert_equal(p.date_to_long(testdate, "ms"), 1)
+		
+        testdate = datetime.datetime(1970, 1, 1, 0, 0, 1, 10000)
+        assert_equal(p.date_to_long(testdate, "ms"), 1010)
+
+        testdate = datetime.datetime(1970, 1, 1, 0, 0, 10, 819000)
+        assert_equal(p.date_to_long(testdate, "ms"), 10819)
+        
+        testdate = datetime.datetime(1970, 1, 1, 0, 0, 1, 81)
+        assert_equal(p.date_to_long(testdate, "us"), 1000081)

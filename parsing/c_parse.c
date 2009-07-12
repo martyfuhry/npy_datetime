@@ -432,6 +432,9 @@ date_to_long(PyObject *self, PyObject *args)
 
 	int freq = FR_ERR;			  // freq_obj is a PyObject to be parsed to freq
 
+	// macro PyDateTime_IMPORT() must be invoked
+	PyDateTime_IMPORT;
+
 	// Make sure the callback function is set
 	//  ! This doesn't check to make sure it's the right callback function
 	//  ! This should all be done in some init script
@@ -462,6 +465,14 @@ date_to_long(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
+	// Make sure date_obj is not NULL
+	if (!date_obj)
+	{
+		PyErr_SetString(PyExc_TypeError, "no date provided.");
+		return NULL;
+	}
+
+	PyTime_Check(date_obj);
 	// Decide if the date_obj is a string or a datetime
 	if (PyString_Check(date_obj))
 	{
