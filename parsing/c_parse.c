@@ -352,12 +352,12 @@ long long datetime_to_long(PyObject* datetime, int frequency)
 	} else if (frequency == FR_m) {
 		result = absdays * 1440 + hour * 60 + minute;
 	} else if (frequency == FR_s) {
-		result = absdays * 86400 + abssecs_from_hms(hour, minute, second);
+		result = absdays * 86400LL + abssecs_from_hms(hour, minute, second);
 	} else if (frequency == FR_ms) {
-		result = absdays * 86400000 + abssecs_from_hms(hour, minute, second) * 1000
-			 	+ (microsecond / 1000);
+		result = absdays * 86400000LL + abssecs_from_hms(hour, minute, second) * 1000LL
+			 	+ (microsecond / 1000LL);
 	} else if (frequency == FR_us) {
-		result = absdays * 86400000000LL + abssecs_from_hms(hour, minute, second) * 1000000
+		result = absdays * 86400000000LL + abssecs_from_hms(hour, minute, second) * 1000000LL
 			 	+ microsecond;
 	}
 	// Starting from here, we need extra units (ns, ps, fs, as)
@@ -432,7 +432,7 @@ date_to_long(PyObject *self, PyObject *args)
 
 	int freq = FR_ERR;			  // freq_obj is a PyObject to be parsed to freq
 
-	// macro PyDateTime_IMPORT() must be invoked
+	// macro PyDateTime_IMPORT must be invoked for PyDateTime_Check
 	PyDateTime_IMPORT;
 
 	// Make sure the callback function is set
@@ -472,7 +472,6 @@ date_to_long(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	PyTime_Check(date_obj);
 	// Decide if the date_obj is a string or a datetime
 	if (PyString_Check(date_obj))
 	{

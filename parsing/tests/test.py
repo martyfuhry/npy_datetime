@@ -827,7 +827,7 @@ class TestCreation():
     def test_datetime(self):
         "Test creation using datetime objects"
         
-        # Testing datetime with Y, M, D
+        # Testing datetime with (Y, M, D)
         testdate = datetime.datetime(1970, 1, 1)
         assert_equal(p.date_to_long(testdate, "Y"), 0)
 		
@@ -843,7 +843,7 @@ class TestCreation():
         testdate = datetime.datetime(1971, 10, 18)
         assert_equal(p.date_to_long(testdate, "M"), 21)
 	
-        # Testing datetime with Y, M, D, h, m, s
+        # Testing datetime with (Y, M, D, h, m, s)
         testdate = datetime.datetime(1970, 1, 1, 1, 0, 0)
         assert_equal(p.date_to_long(testdate, "h"), 1)
 		
@@ -853,7 +853,7 @@ class TestCreation():
         testdate = datetime.datetime(1970, 1, 1, 0, 11, 10)
         assert_equal(p.date_to_long(testdate, "s"), 670)
 	
-        # Testing datetime with Y, M, D, h, m, s, us
+        # Testing datetime with (Y, M, D, h, m, s, us)
         testdate = datetime.datetime(1970, 1, 1, 0, 0, 0, 1000)
         assert_equal(p.date_to_long(testdate, "ms"), 1)
 		
