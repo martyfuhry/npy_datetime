@@ -67,6 +67,27 @@ int freq_to_int(char* freq)
 static PyObject *callback = NULL;
 
 static PyObject *
+test_callback()
+{
+	PyObject *result = NULL;
+	PyObject *arglist = NULL;
+	int a = 1, b = 2;
+	arglist = Py_BuildValue("ii", a, b);
+	if (callback == NULL)
+	{
+		PyErr_SetString(PyExc_TypeError, "callback not set.");
+		return NULL;
+	}
+	result = PyEval_CallObject(callback, arglist);
+	Py_DECREF(arglist);
+	if (result == NULL)
+		return NULL;
+	// Use result HERE
+	
+	return result;
+}
+
+static PyObject *
 set_callback(PyObject *dummy, PyObject *args)
 {
 	PyObject *result = NULL;
@@ -93,26 +114,6 @@ set_callback(PyObject *dummy, PyObject *args)
 	return result;
 }
 
-static PyObject *
-test_callback()
-{
-	PyObject *result = NULL;
-	PyObject *arglist = NULL;
-	int a = 1, b = 2;
-	arglist = Py_BuildValue("ii", a, b);
-	if (callback == NULL)
-	{
-		PyErr_SetString(PyExc_TypeError, "callback not set.");
-		return NULL;
-	}
-	result = PyEval_CallObject(callback, arglist);
-	Py_DECREF(arglist);
-	if (result == NULL)
-		return NULL;
-	// Use result HERE
-	
-	return result;
-}
 
 PyObject *DateCalc_RangeError = NULL;
 PyObject *DateCalc_Error      = NULL;
@@ -214,7 +215,7 @@ int week_from_ady(long absdate, int day, int year)
 // Modified version of mxDateTime function
 // Returns absolute number of days since Jan 1, 1970
 static
-long absdays_from_ymd(int year, int month, int day)
+long long absdays_from_ymd(int year, int month, int day)
 {
 
     /* Calculate the absolute date */
@@ -263,7 +264,7 @@ onError:
 }
 
 // Returns absolute seconds from an hour, minute, and second
-long abssecs_from_hms(int hour, int minute, int second)
+long long abssecs_from_hms(int hour, int minute, int second)
 {
 	// Needs to perform checks for valid times
 	return hour * 3600 + minute * 60 + second;
@@ -282,7 +283,7 @@ long abssecs_from_hms(int hour, int minute, int second)
 
 // Takes a datetime object and a string as frequency
 // Returns the number of (frequency) since Jan 1, 1970
-long datetime_to_long(PyObject* datetime, int frequency)
+long long datetime_to_long(PyObject* datetime, int frequency)
 {
 	int year = 0, month = 0, day = 0, hour = 0, 
 		minute = 0, second = 0, microsecond = 0;
@@ -295,15 +296,14 @@ long datetime_to_long(PyObject* datetime, int frequency)
 	minute      = PyDateTime_DATE_GET_MINUTE(datetime);
 	second      = PyDateTime_DATE_GET_SECOND(datetime);
 	microsecond = PyDateTime_DATE_GET_MICROSECOND(datetime);
-
+	
 	// The return value
-	long result = 0;
+	long long result = 0;
 
 	// The absolute number of days since 1970
-	long absdays = absdays_from_ymd(year, month, day);
+	long long absdays = absdays_from_ymd(year, month, day);
 
 	// 1 for leap, 0 for no leap
-	int leap = (year % 4 == 0) ? 1 : 0;
 
 	// These calculations depend on the frequency
 
@@ -357,7 +357,7 @@ long datetime_to_long(PyObject* datetime, int frequency)
 		result = absdays * 86400000 + abssecs_from_hms(hour, minute, second) * 1000
 			 	+ (microsecond / 1000);
 	} else if (frequency == FR_us) {
-		result = absdays * 86400000000 + abssecs_from_hms(hour, minute, second) * 1000000
+		result = absdays * 86400000000LL + abssecs_from_hms(hour, minute, second) * 1000000
 			 	+ microsecond;
 	}
 	// Starting from here, we need extra units (ns, ps, fs, as)
@@ -376,7 +376,7 @@ long datetime_to_long(PyObject* datetime, int frequency)
 		result = 0;
 	} else {
 		// Throw some Not Valid Frequency error here
-		result = 0;
+		result = -1;
 	}	
 
 	return result;
@@ -386,11 +386,11 @@ long datetime_to_long(PyObject* datetime, int frequency)
 //  parses that into a datetime and passes the datetime object 
 //  to datetime_to_long
 // Returns the number of (frequency) since Jan 1, 1970
-long datestring_to_long(PyObject *string, int frequency)
+long long datestring_to_long(PyObject *string, int frequency)
 {
 	// Send to datetime_to_long
 	PyObject *datetime = NULL;
-	long result = 0;
+	long long result = 0;
 
 	// Make the string into a tuple for the callback function
 	PyObject *string_arg = PyTuple_New(1);
@@ -413,8 +413,10 @@ long datestring_to_long(PyObject *string, int frequency)
 		PyErr_SetString(PyExc_TypeError, "error processing datetime");
 		//return NULL;
 		//Return bad stuff
-		return 0;
+		result = -1;
 	}
+
+	return result;
 }
 
 // This is the callable wrapper for datestring/datetime_to_long
@@ -465,13 +467,13 @@ date_to_long(PyObject *self, PyObject *args)
 	{
 		// XXX PyINCREF here?
 		// date_obj is a string, so return datestring_to_long
-		result = PyLong_FromLong(datestring_to_long(date_obj, freq));
+		result = PyLong_FromLongLong(datestring_to_long(date_obj, freq));
 	}
 	else if (PyDateTime_Check(date_obj))
 	{
 		// XXX PyINCREF here?
 		// date_obj is a datetime, so return datetime_to_long
-		result = PyLong_FromLong(datetime_to_long(date_obj, freq));
+		result = PyLong_FromLongLong(datetime_to_long(date_obj, freq));
 	}
 	else
 	{
@@ -496,7 +498,7 @@ static PyMethodDef methods[] = {
 	 METH_VARARGS, ""},
 	{"test_callback", (PyCFunction)test_callback,
 	 METH_VARARGS, ""},
-	{"date_to_long", (PyCFunction)date_to_long,
+	{"date_to_long", date_to_long,
 	 METH_VARARGS, ""},
 	{NULL, NULL}
 };
