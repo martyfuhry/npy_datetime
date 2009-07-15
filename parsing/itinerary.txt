@@ -9,10 +9,19 @@ Completed
 * Day, Business Day
 4. September 1752 Tests
 * Weeks, Business Days, Days
+5. Long to DateTime Unit Tests
+* Year, Month, Week, Business Day, Day, Hour, Minute, Second, Millisecond, Microsecond
+6. Long to Date Calculations
+* Year, Month
 
 Working On
 -----
 1. Out of Range Tests
+2. Long to Date Calculations
+* Week, Business Day, Day, Hour, Minute, Second, Millisecond, Microsecond
+3. Long to DateISOString 
+4. Long to DateISOString Unit Tests
+* Year, Month, Week, Business Day, Day, Hour, Minute, Second, Millisecond, Microsecond
 
 Known Issues
 -----
@@ -21,5 +30,3 @@ Known Issues
 * Some rare parsing issues (Nothing to get too excited about just yet...)
 2. September, 1752 Calendar change
 * Current code ignores the change, assumes September 3 - 13, 1752 exists and acts accordingly
-3. C Long
-* Exactly what C type is this? A longlong? int64? (I'll look into typedefing it for now, so it's not a big deal until I write Out of Range Tests.)
