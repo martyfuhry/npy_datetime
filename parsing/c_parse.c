@@ -24,6 +24,13 @@
 // Offset for number of days between Jan 1, 1970 and Jan 1, 0001
 #define DAYS_EPOCH 719163
 
+// Calendar Structure for Parsing Long -> Date
+typedef struct {
+	int year, month, day, hour,
+		minute, second, msecond,
+		usecond, nsecond, psecond, fsecond,
+		asecond;
+} datestruct;
 
 int freq_to_int(char* freq)
 {
@@ -277,9 +284,9 @@ long long abssecs_from_hms(int hour, int minute, int second)
 ====================================================
 */
 
-//=============
-// parsing
-// ============
+//==================================================
+// Parsing datetime/datestring to long
+// =================================================
 
 // Takes a datetime object and a string as frequency
 // Returns the number of (frequency) since Jan 1, 1970
@@ -426,11 +433,11 @@ long long datestring_to_long(PyObject *string, int frequency)
 PyObject *
 date_to_long(PyObject *self, PyObject *args)
 {
-	PyObject *date_obj = NULL;    // string or datetime
-	PyObject *freq_obj = NULL;	  // frequency as string
+	PyObject *date_arg = NULL;    // string or datetime
+	PyObject *freq_arg = NULL;	  // frequency as string
 	PyObject *result   = NULL;	  // long result
 
-	int freq = FR_ERR;			  // freq_obj is a PyObject to be parsed to freq
+	int freq = FR_ERR;			  // freq_arg is a PyObject to be parsed to freq
 
 	// macro PyDateTime_IMPORT must be invoked for PyDateTime_Check
 	PyDateTime_IMPORT;
@@ -444,50 +451,186 @@ date_to_long(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	// Parse out date_obj & freq_obj
-	if (!PyArg_ParseTuple(args, "OO", &date_obj, &freq_obj))
+	// Parse out date_arg & freq_arg
+	if (!PyArg_ParseTuple(args, "OO", &date_arg, &freq_arg))
 	{
 		return NULL;
 	}
 
 	// Make sure frequency is not NULL
-	if (!freq_obj)
+	if (!freq_arg)
 	{	
 		PyErr_SetString(PyExc_TypeError, "frequency not set.");
 		return NULL;
 	}
 
 	// Parse out frequency into an int so we can use it easily
-	if ((freq = freq_to_int(PyString_AsString(freq_obj))) == FR_ERR)
+	if ((freq = freq_to_int(PyString_AsString(freq_arg))) == FR_ERR)
 	{
 		// If the frequency is invalid, set an error and return null
 		PyErr_SetString(PyExc_TypeError, "invalid frequency.");
 		return NULL;
 	}
 
-	// Make sure date_obj is not NULL
-	if (!date_obj)
+	// Make sure date_arg is not NULL
+	if (!date_arg)
 	{
 		PyErr_SetString(PyExc_TypeError, "no date provided.");
 		return NULL;
 	}
 
-	// Decide if the date_obj is a string or a datetime
-	if (PyString_Check(date_obj))
+	// Decide if the date_arg is a string or a datetime
+	if (PyString_Check(date_arg))
 	{
 		// XXX PyINCREF here?
-		// date_obj is a string, so return datestring_to_long
-		result = PyLong_FromLongLong(datestring_to_long(date_obj, freq));
+		// date_arg is a string, so return datestring_to_long
+		result = PyLong_FromLongLong(datestring_to_long(date_arg, freq));
 	}
-	else if (PyDateTime_Check(date_obj))
+	else if (PyDateTime_Check(date_arg))
 	{
 		// XXX PyINCREF here?
-		// date_obj is a datetime, so return datetime_to_long
-		result = PyLong_FromLongLong(datetime_to_long(date_obj, freq));
+		// date_arg is a datetime, so return datetime_to_long
+		result = PyLong_FromLongLong(datetime_to_long(date_arg, freq));
 	}
 	else
 	{
-		// date_obj is neither a string, nor a datetime
+		// date_arg is neither a string, nor a datetime
+		PyErr_SetString(PyExc_TypeError, "invalid date type");
+		return NULL;
+	}
+
+	if (PyErr_Occurred())
+		return NULL;
+
+	return result;
+}
+//==================================================
+// Parsing long to datetime/datestring
+// =================================================
+
+// Takes a long long value and a frequency
+// Returns a datestruct formatted with the correct calendar values
+datestruct long_to_datestruct(long long dlong, int frequency)
+{
+	int year = 1970, month = 1, day = 1, 
+		hour = 0, minute = 0, second = 0,
+		msecond = 0, usecond = 0, nsecond = 0,
+		psecond = 0, fsecond = 0, asecond = 0;
+
+	datestruct result;
+
+	if (frequency == FR_Y) {
+		year = 1970 + dlong;
+	} else if (frequency == FR_M) {
+		year = 1970 + dlong / 12;
+		dlong = dlong % 12 + 1;
+		month = dlong;
+	} else if (frequency == FR_W) {
+	} else if (frequency == FR_B) {
+	} else if (frequency == FR_D) {
+	} else if (frequency == FR_h) {
+	} else if (frequency == FR_m) {
+	} else if (frequency == FR_s) {
+	} else if (frequency == FR_us) {
+	}
+	// Starting from here, we need extra units (ns, ps, fs, as)
+	//  for correct precision: datetime doesn't include beyond microsecond
+	else if (frequency == FR_ns) {
+		PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
+	} else if (frequency == FR_ps) {
+		PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
+	} else if (frequency == FR_fs) {
+		PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
+	} else if (frequency == FR_as) {
+		PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
+	} else {
+		// Throw some Not Valid Frequency error here
+	}
+	
+	result.year    = year;
+	result.month   = month;
+	result.day     = day;
+	result.hour    = hour;
+	result.minute  = minute;
+	result.second  = second;
+	result.msecond = msecond;
+	result.usecond = usecond;
+	result.nsecond = nsecond;
+	result.psecond = psecond;
+	result.fsecond = fsecond;
+	result.asecond = asecond;
+
+	return result;
+}
+
+// Takes a long and a frequency
+// Returns a Python DateTime Object
+PyObject *
+long_to_datetime(PyObject *self, PyObject *args)
+{
+	PyObject *long_arg = NULL;    // string or datetime
+	PyObject *freq_arg = NULL;	  // frequency as string
+	PyObject *result   = NULL;	  // long result
+
+	long long dlong = 0;          // Stores the long_arg
+	int freq = FR_ERR;			  // freq_arg is a PyObject to be parsed to freq
+	datestruct dstruct;		      // To store date values
+
+	// macro PyDateTime_IMPORT must be invoked for PyDateTime_Check
+	PyDateTime_IMPORT;
+
+	// Make sure the callback function is set
+	//  ! This doesn't check to make sure it's the right callback function
+	//  ! This should all be done in some init script
+	if (!PyCallable_Check(callback))
+	{
+		PyErr_SetString(PyExc_TypeError, "callback not set.");
+		return NULL;
+	}
+
+	// Parse out long_arg & freq_arg
+	if (!PyArg_ParseTuple(args, "OO", &long_arg, &freq_arg))
+	{
+		return NULL;
+	}
+
+	// Make sure frequency is not NULL
+	if (!freq_arg)
+	{	
+		PyErr_SetString(PyExc_TypeError, "frequency not set.");
+		return NULL;
+	}
+
+	// Parse out frequency into an int so we can use it easily
+	if ((freq = freq_to_int(PyString_AsString(freq_arg))) == FR_ERR)
+	{
+		// If the frequency is invalid, set an error and return null
+		PyErr_SetString(PyExc_TypeError, "invalid frequency.");
+		return NULL;
+	}
+	// Make sure long_arg is not NULL
+	if (!long_arg)
+	{
+		PyErr_SetString(PyExc_TypeError, "no date provided.");
+		return NULL;
+	}
+	// Be sure long_arg is a long
+	if (PyLong_Check(long_arg))
+	{
+
+		// XXX PyINCREF here?
+		// Convert long_arg to a long long
+		dlong = PyLong_AsLongLong(long_arg);
+		// Format the dstruct to create the datetime object
+		dstruct = long_to_datestruct(dlong, freq);
+		// Create the PyDateTime Object as result
+		result = PyDateTime_FromDateAndTime(dstruct.year, dstruct.month,
+				 dstruct.day, dstruct.hour, dstruct.minute, dstruct.second,
+				 dstruct.usecond);
+	}
+	else
+	{
+		// long_arg is not a long; error
 		PyErr_SetString(PyExc_TypeError, "invalid date type");
 		return NULL;
 	}
@@ -498,17 +641,19 @@ date_to_long(PyObject *self, PyObject *args)
 	return result;
 }
 
-
 //=============
 // module
 // ============
 
+// Tell Python what methods we can run from this module
 static PyMethodDef methods[] = {
 	{"set_callback", (PyCFunction)set_callback, 
 	 METH_VARARGS, ""},
 	{"test_callback", (PyCFunction)test_callback,
 	 METH_VARARGS, ""},
 	{"date_to_long", date_to_long,
+	 METH_VARARGS, ""},
+	{"long_to_datetime", long_to_datetime,
 	 METH_VARARGS, ""},
 	{NULL, NULL}
 };
