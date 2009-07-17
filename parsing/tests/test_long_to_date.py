@@ -396,7 +396,7 @@ class TestCreation():
         dlong = -46080L
         assert_equal(p.long_to_datetime(dlong, 'm'), d.datetime(1969, 11, 30, 0, 0, 0))
 
-        dlong = -5360320L
+        dlong = -5260320L
         assert_equal(p.long_to_datetime(dlong, 'm'), d.datetime(1960, 1, 1, 0, 0, 0))
 
         dlong = -36402460L
@@ -502,7 +502,7 @@ class TestCreation():
         "Test creation of milliseconds pre epoch."
         
         dlong = -1L
-        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1969, 12, 31, 23, 59, 59, 999))
+        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1969, 12, 31, 23, 59, 59, 999000))
 
         dlong = -1000L
         assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1969, 12, 31, 23, 59, 59, 0))
@@ -517,22 +517,22 @@ class TestCreation():
         assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1969, 12, 31, 0, 0, 0, 0))
 
         dlong = -31535999500L
-        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1969, 1, 1, 0, 0, 0, 500))
+        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1969, 1, 1, 0, 0, 0, 500000))
 
         dlong = -2189839791200L
-        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1900, 8, 10, 15, 10, 8, 800))
+        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1900, 8, 10, 15, 10, 8, 800000))
 
         dlong = -4674565844889L
-        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1821, 11, 14, 5, 29, 15, 111))
+        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1821, 11, 14, 5, 29, 15, 111000))
 
         dlong = -6908586467879L
-        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1751, 1, 28, 12, 12, 12, 121))
+        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1751, 1, 28, 12, 12, 12, 121000))
 
         dlong = -27094687031082L
-        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1111, 5, 29, 2, 2, 48, 918))
+        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1111, 5, 29, 2, 2, 48, 918000))
 
         dlong = -62135552721602L
-        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1, 1, 1, 12, 14, 38, 398))
+        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1, 1, 1, 12, 14, 38, 398000))
 
     def test_post_epoch_millisecond(self): 
         "Test creation of milliseconds post epoch."
@@ -541,22 +541,22 @@ class TestCreation():
         assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1970, 1, 1, 0, 0, 0, 0))
 
         dlong = 1L
-        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1970, 1, 1, 0, 0, 0, 1))
+        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1970, 1, 1, 0, 0, 0, 1000))
 
         dlong = 43200020L
-        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1970, 1, 1, 12, 0, 0, 20))
+        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1970, 1, 1, 12, 0, 0, 20000))
 
         dlong = 315532800111L
-        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1980, 1, 1, 0, 0, 0, 111))
+        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1980, 1, 1, 0, 0, 0, 111000))
 
         dlong = 366695308847L
-        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1981, 8, 15, 3, 48, 28, 847))
+        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(1981, 8, 15, 3, 48, 28, 847000))
 
         dlong = 1006905599999L
-        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(2001, 11, 27, 23, 59, 59, 999))
+        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(2001, 11, 27, 23, 59, 59, 999000))
 
         dlong = 1013465408001L
-        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(2002, 2, 11, 22, 10, 8, 1))
+        assert_equal(p.long_to_datetime(dlong, 'ms'), d.datetime(2002, 2, 11, 22, 10, 8, 1000))
 
     # MICROSECOND
     def test_pre_epoch_microsecond(self): 
