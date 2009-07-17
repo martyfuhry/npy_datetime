@@ -26,6 +26,10 @@
 
 // Calendar Structure for Parsing Long -> Date
 typedef struct {
+	int year, month, day;
+} ymdstruct;
+
+typedef struct {
 	int year, month, day, hour,
 		minute, second, msecond,
 		usecond, nsecond, psecond, fsecond,
@@ -276,7 +280,61 @@ long long abssecs_from_hms(int hour, int minute, int second)
 	// Needs to perform checks for valid times
 	return hour * 3600 + minute * 60 + second;
 }
+static
+ymdstruct long_to_ymdstruct(long long dlong)
+{
+	ymdstruct ymd;
+    register long year;
+   	long long yearoffset;
+    int leap, dayoffset;
+	int month = 1, day = 1;
+    int *monthoffset;
+	dlong += DAYS_EPOCH;
 
+    /* Approximate year */
+     year = 1970 + dlong / 365.25;
+    
+	if (dlong > 0) year++;
+
+    /* Apply corrections to reach the correct year */
+    while (1) {
+        /* Calculate the year offset */
+        yearoffset = year_offset(year);
+
+        /* Backward correction: absdate must be greater than the
+           yearoffset */
+        if (yearoffset >= dlong) {
+            year--;
+            continue;
+        }
+
+        dayoffset = dlong - yearoffset;
+        leap = is_leapyear(year);
+
+        /* Forward correction: non leap years only have 365 days */
+        if (dayoffset > 365 && !leap) {
+            year++;
+            continue;
+        }
+        break;
+    }
+
+    /* Now iterate to find the month */
+    monthoffset = month_offset[leap];
+    {
+        for (month = 1; month < 13; month++) {
+            if (monthoffset[month] >= dayoffset)
+            	break;
+        }
+        day = dayoffset - month_offset[leap][month-1];
+    }
+	
+	ymd.year  = year;
+	ymd.month = month;
+	ymd.day   = day;
+
+	return ymd;
+}
 
 /*
 ====================================================
@@ -532,8 +590,10 @@ datestruct long_to_datestruct(long long dlong, int frequency)
 	} else if (frequency == FR_W) {
 	} else if (frequency == FR_B) {
 	} else if (frequency == FR_D) {
-		year = 1970 + dlong / 365.25;
-		dlong = dlong % 365;
+		ymdstruct ymd = long_to_ymdstruct(dlong);
+		year  = ymd.year;
+	    month = ymd.month;
+		day   = ymd.day;	
 	} else if (frequency == FR_h) {
 	} else if (frequency == FR_m) {
 	} else if (frequency == FR_s) {
