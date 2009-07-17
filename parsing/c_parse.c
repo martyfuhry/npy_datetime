@@ -640,17 +640,31 @@ datestruct long_to_datestruct(long long dlong, int frequency)
 		hmsstruct hms;
 		if (dlong >= 0) {
 			ymd = long_to_ymdstruct(dlong / 1440);
-			hms = long_to_hmsstruct(dlong * 60);
 		} else {
 			ymd = long_to_ymdstruct((dlong - 1439) / 1440);
-			hms = long_to_hmsstruct(dlong * 60);
 		}
+		hms = long_to_hmsstruct(dlong * 60);
 		year   = ymd.year;
 		month  = ymd.month;
 		day    = ymd.day;
 		hour   = hms.hour;
 		minute = hms.minute;
 	} else if (frequency == FR_s) {
+		ymdstruct ymd;
+		hmsstruct hms;
+		if (dlong >= 0) {
+			ymd = long_to_ymdstruct(dlong / 86400);
+		} else {
+			ymd = long_to_ymdstruct((dlong - 86399) / 86400);
+		}
+		hms = long_to_hmsstruct(dlong);
+		year   = ymd.year;
+		month  = ymd.month;
+		day    = ymd.day;
+		hour   = hms.hour;
+		minute = hms.minute;
+		second = hms.second;
+	} else if (frequency == FR_ms) {
 	} else if (frequency == FR_us) {
 	}
 	// Starting from here, we need extra units (ns, ps, fs, as)
