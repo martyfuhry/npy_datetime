@@ -688,8 +688,8 @@ datestruct long_to_datestruct(long long dlong, int frequency)
 		hmsstruct hms;
 		if (dlong >= 0) {
 			ymd = long_to_ymdstruct(dlong / 86400000000LL);
-			hms = long_to_hmsstruct(dlong / 1000000);
-			msecond = dlong % 1000;
+			hms = long_to_hmsstruct(dlong / 1000000LL);
+			msecond = dlong % 1000000LL;
 		} else {
 			ymd = long_to_ymdstruct((dlong - 86399999999LL) / 86400000000LL);
 			hms = long_to_hmsstruct((dlong - 999999LL) / 1000000LL);
