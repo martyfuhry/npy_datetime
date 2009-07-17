@@ -522,12 +522,18 @@ datestruct long_to_datestruct(long long dlong, int frequency)
 	if (frequency == FR_Y) {
 		year = 1970 + dlong;
 	} else if (frequency == FR_M) {
-		year = 1970 + dlong / 12;
-		dlong = dlong % 12 + 1;
-		month = dlong;
+		if (dlong >= 0) {
+			year  = 1970 + dlong / 12;
+		   	month = dlong % 12 + 1;
+		} else {
+			year  = 1969 + (dlong + 1) / 12;
+			month = 12 + (dlong + 1)% 12;
+		}
 	} else if (frequency == FR_W) {
 	} else if (frequency == FR_B) {
 	} else if (frequency == FR_D) {
+		year = 1970 + dlong / 365.25;
+		dlong = dlong % 365;
 	} else if (frequency == FR_h) {
 	} else if (frequency == FR_m) {
 	} else if (frequency == FR_s) {
