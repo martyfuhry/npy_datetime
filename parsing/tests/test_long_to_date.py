@@ -583,7 +583,7 @@ class TestCreation():
         dlong = -289372321816129L
         assert_equal(p.long_to_datetime(dlong, 'us'), d.datetime(1960, 10, 30, 18, 47, 58, 183871))
 
-        dlong = -2095645498999999 
+        dlong = -2095645498999999L
         assert_equal(p.long_to_datetime(dlong, 'us'), d.datetime(1903, 8, 5, 20, 15, 1, 1))
 
         dlong = -5333126340000000L
