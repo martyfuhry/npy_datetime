@@ -30,6 +30,10 @@ typedef struct {
 } ymdstruct;
 
 typedef struct {
+	int hour, minute, second;
+} hmsstruct;
+
+typedef struct {
 	int year, month, day, hour,
 		minute, second, msecond,
 		usecond, nsecond, psecond, fsecond,
@@ -336,6 +340,30 @@ ymdstruct long_to_ymdstruct(long long dlong)
 	return ymd;
 }
 
+/* Sets the time part of the DateTime object. */
+static
+hmsstruct long_to_hmsstruct(long long dlong)
+{
+    int hour, minute, second;
+	hmsstruct hms;
+
+	// Make dlong within a one day period
+	dlong = dlong % 86400;
+
+	if (dlong < 0)
+		dlong = 86400 + dlong;
+    hour   = dlong / 3600;
+    minute = (dlong % 3600) / 60;
+    second = dlong - (hour*3600 + minute*60);
+
+   	hms.hour   = hour;
+   	hms.minute = minute;
+   	hms.second = second;
+
+	return hms;
+}
+
+
 /*
 ====================================================
 == End of section borrowed from mx.DateTime       ==
@@ -596,16 +624,32 @@ datestruct long_to_datestruct(long long dlong, int frequency)
 		day   = ymd.day;	
 	} else if (frequency == FR_h) {
 		ymdstruct ymd;	
+		hmsstruct hms;
 		if (dlong >= 0) {
-			ymd = long_to_ymdstruct(dlong / 24);
+			ymd  = long_to_ymdstruct(dlong / 24);
 		} else {
-			ymd = long_to_ymdstruct((dlong - 23) / 24);
+			ymd  = long_to_ymdstruct((dlong - 23) / 24);
 		}
+		hms  = long_to_hmsstruct(dlong * 3600);
 		year  = ymd.year;
 		month = ymd.month;
 		day   = ymd.day;
-		hour  = (dlong >= 0) ? dlong % 24 : (24 + (dlong % 24)) % 24;
+		hour  = hms.hour;
 	} else if (frequency == FR_m) {
+		ymdstruct ymd;
+		hmsstruct hms;
+		if (dlong >= 0) {
+			ymd = long_to_ymdstruct(dlong / 1440);
+			hms = long_to_hmsstruct(dlong * 60);
+		} else {
+			ymd = long_to_ymdstruct((dlong - 1439) / 1440);
+			hms = long_to_hmsstruct(dlong * 60);
+		}
+		year   = ymd.year;
+		month  = ymd.month;
+		day    = ymd.day;
+		hour   = hms.hour;
+		minute = hms.minute;
 	} else if (frequency == FR_s) {
 	} else if (frequency == FR_us) {
 	}
