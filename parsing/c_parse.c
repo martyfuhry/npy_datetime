@@ -595,6 +595,11 @@ datestruct long_to_datestruct(long long dlong, int frequency)
 	    month = ymd.month;
 		day   = ymd.day;	
 	} else if (frequency == FR_h) {
+		ymdstruct ymd = long_to_ymdstruct(dlong / 24);
+		year  = ymd.year;
+		month = ymd.month;
+		day   = ymd.day;
+		hour  = dlong % 24;
 	} else if (frequency == FR_m) {
 	} else if (frequency == FR_s) {
 	} else if (frequency == FR_us) {
