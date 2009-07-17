@@ -97,28 +97,25 @@ class TestCreation():
         
     	# XXX Needs to be rewritten for Sunday
         dlong = 0L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1969, 12, 31))
-
-        dlong = 0L
         assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1969, 12, 28))
 
         dlong = -1L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1969, 12, 27))
+        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1969, 12, 21))
 
         dlong = -51L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1969, 1, 6))
+        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1969, 1, 5))
 
         dlong = -52L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1969, 1, 1))
+        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1968, 12, 29))
 
         dlong = -3621L
         assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1900, 8, 5))
 
         dlong = -3622L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1900, 8, 4))
+        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1900, 7, 29))
 
         dlong = -6190L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1851, 5, 17))
+        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1851, 5, 11))
 
         dlong = -6189L
         assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1851, 5, 18))
@@ -127,25 +124,10 @@ class TestCreation():
         assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1000, 1, 5))
 
         dlong = -50612L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1000, 1, 4))
+        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(999, 12, 29))
 
         dlong = -55188L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(912, 4, 18))
-
-        dlong = -55188L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(912, 4, 19))
-
-        dlong = -55188L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(912, 4, 20))
-
-        dlong = -55188L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(912, 4, 21))
-
-        dlong = -55188L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(912, 4, 22))
-
-        dlong = -55188L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(912, 4, 23))
+        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(912, 4, 17))
 
         dlong = -55187L
         assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(912, 4, 24))
@@ -154,19 +136,13 @@ class TestCreation():
         assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(10, 1, 10))
 
         dlong = -102267L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(10, 1, 9))
+        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(10, 1, 3))
 
     def test_post_epoch_week(self): 
         "Test creation of weeks post epoch."
 
-        dlong = 0L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1970, 1, 1))
-        
         dlong = 1L
         assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1970, 1, 4))
-        
-        dlong = 1L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1970, 1, 10))
         
         dlong = 2L
         assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1970, 1, 11))
@@ -174,35 +150,29 @@ class TestCreation():
         dlong = 9L
         assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1970, 3, 1))
 
-        dlong = 9L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1970, 3, 7))
-
         dlong = 10L
         assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1970, 3, 8))
 
         dlong = 522L
-        assert_equal(p.long_to_datetime(dlong, "W"), d.datetime(1980, 1, 4))
+        assert_equal(p.long_to_datetime(dlong, "W"), d.datetime(1979, 12, 30))
 
         dlong = 523L
         assert_equal(p.long_to_datetime(dlong, "W"), d.datetime(1980, 1, 6))
 
-        dlong = 523L
-        assert_equal(p.long_to_datetime(dlong, "W"), d.datetime(1980, 1, 7))
-
         dlong = 1600L
-        assert_equal(p.long_to_datetime(dlong, "W"), d.datetime(2000, 9, 2))
+        assert_equal(p.long_to_datetime(dlong, "W"), d.datetime(2000, 8, 27))
 
         dlong = 1601L
-        assert_equal(p.long_to_datetime(dlong, "W"), d.datetime(2000, 9, 4))
+        assert_equal(p.long_to_datetime(dlong, "W"), d.datetime(2000, 9, 3))
 
         dlong = 11582L
-        assert_equal(p.long_to_datetime(dlong, "W"), d.datetime(2191, 12, 24))
+        assert_equal(p.long_to_datetime(dlong, "W"), d.datetime(2191, 12, 18))
 
         dlong = 11583L
         assert_equal(p.long_to_datetime(dlong, "W"), d.datetime(2191, 12, 25))
 
-        dlong = 11583L
-        assert_equal(p.long_to_datetime(dlong, "W"), d.datetime(2191, 12, 26))
+        dlong = 11584L
+        assert_equal(p.long_to_datetime(dlong, "W"), d.datetime(2192, 1, 1))
 
     # BUSINESS DAY
     def test_pre_epoch_business(self): 
