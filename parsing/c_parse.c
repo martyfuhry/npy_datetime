@@ -689,11 +689,13 @@ datestruct long_to_datestruct(long long dlong, int frequency)
 		if (dlong >= 0) {
 			ymd = long_to_ymdstruct(dlong / 86400000000LL);
 			hms = long_to_hmsstruct(dlong / 1000000LL);
-			msecond = dlong % 1000000LL;
+			msecond = (dlong / 1000) % 1000;
+			usecond = msecond * 1000LL + dlong % 1000LL;
 		} else {
 			ymd = long_to_ymdstruct((dlong - 86399999999LL) / 86400000000LL);
 			hms = long_to_hmsstruct((dlong - 999999LL) / 1000000LL);
-			msecond = (1000000LL + dlong % 1000000LL) % 1000000LL;
+			msecond = (1000 + (dlong / 1000) % 1000) % 1000;
+			usecond = (1000000LL + (dlong % 1000000)) % 1000000;
 		}
 		year    = ymd.year;
 		month   = ymd.month;
@@ -701,7 +703,6 @@ datestruct long_to_datestruct(long long dlong, int frequency)
 		hour    = hms.hour;
 		minute  = hms.minute;
 		second  = hms.second;
-		usecond = msecond * 1000LL + dlong % 1000LL;
 	}
 	// Starting from here, we need extra units (ns, ps, fs, as)
 	//  for correct precision: datetime doesn't include beyond microsecond
