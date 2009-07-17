@@ -668,19 +668,21 @@ datestruct long_to_datestruct(long long dlong, int frequency)
 		ymdstruct ymd;
 		hmsstruct hms;
 		if (dlong >= 0) {
-			ymd = long_to_ymdstruct(dlong / 86400000);
+			ymd = long_to_ymdstruct(dlong / 86400000LL);
+			hms = long_to_hmsstruct(dlong / 1000);
 			msecond = dlong % 1000;
 		} else {
-			ymd = long_to_ymdstruct((dlong - 86399999) / 86400000);
-			msecond = 1000 - ((dlong + 1) % 1000);
+			ymd = long_to_ymdstruct((dlong - 86399999LL) / 86400000LL);
+			hms = long_to_hmsstruct((dlong - 999LL) / 1000);
+			msecond = (1000 + dlong % 1000) % 1000;
 		}
-		hms = long_to_hmsstruct(dlong * 1000);
 		year    = ymd.year;
 		month   = ymd.month;
 		day     = ymd.day;
 		hour    = hms.hour;
 		minute  = hms.minute;
 		second  = hms.second;
+		usecond = msecond * 1000;
 	} else if (frequency == FR_us) {
 	}
 	// Starting from here, we need extra units (ns, ps, fs, as)
