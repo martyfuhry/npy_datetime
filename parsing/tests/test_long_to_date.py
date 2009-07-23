@@ -95,7 +95,6 @@ class TestCreation():
     def test_pre_epoch_week(self): 
         "Test creation of weeks pre epoch."
         
-    	# XXX Needs to be rewritten for Sunday
         dlong = 0L
         assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1969, 12, 28))
 
@@ -194,6 +193,9 @@ class TestCreation():
         dlong = -8L
         assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(1969, 12, 22))
 
+        dlong = -9L
+        assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(1969, 12, 19))
+
         dlong = -261L
         assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(1969, 1, 1))
 
@@ -203,8 +205,8 @@ class TestCreation():
         dlong = -147838L
         assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(1403, 5, 2))
 
-        dlong = -487603L
-        assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(100, 12, 26))
+        dlong = -487604L
+        assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(100, 12, 24))
 
         dlong = -513688L
         assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(1, 1, 1))
@@ -213,17 +215,27 @@ class TestCreation():
     def test_post_epoch_business_day(self): 
         "Test creation of business days post epoch."
         
+        # XXX Needs to be rewritten for Weekends
         dlong = 0L
         assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(1970, 1, 1))
     
         dlong = 1L
         assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(1970, 1, 2))
     
+        dlong = 3L
+        assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(1970, 1, 6))
+    
         dlong = 6L
         assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(1970, 1, 9))
     
-        dlong = 6L
-        assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(1970, 1, 11))
+        dlong = 10L
+        assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(1970, 1, 15))
+    
+        dlong = 21L
+        assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(1970, 1, 30))
+    
+        dlong = 91L
+        assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(1970, 5, 8))
     
         dlong = 1564L
         assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(1975, 12, 31))
@@ -232,10 +244,7 @@ class TestCreation():
         assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(1980, 1, 1))
     
         dlong = 10651L
-        assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(2010, 10, 30))
-    
-        dlong = 10651L
-        assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(2010, 10, 31))
+        assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(2010, 10, 29))
     
         dlong = 10652L
         assert_equal(p.long_to_datetime(dlong, "B"), d.datetime(2010, 11, 1))
@@ -678,12 +687,10 @@ class TestCreation():
         assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(1968, 2, 29))
         dlong = -479L
         assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(1968, 3, 1))
-        dlong = -1523L
-        assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(1964, 2, 29))
         dlong = -1524L
         assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(1964, 2, 28))
         dlong = -1523L
-        assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(1964, 3, 1))
+        assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(1964, 3, 2))
         dlong = -93357L
         assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(1612, 2, 28))
         dlong = -93356L
@@ -710,7 +717,7 @@ class TestCreation():
         dlong = 2651L
         assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(1980, 2, 29))
         dlong = 8911L
-        assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(2004, 2, 29))
+        assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(2004, 2, 27))
         dlong = 42306L
         assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(2132, 2, 29))
 
@@ -725,15 +732,7 @@ class TestCreation():
         dlong = -11330L
         assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1752, 11, 5))
         dlong = -11329L
-        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1752, 11, 13))
-
-        # Business Days
-        dlong = -56654L
-        assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(1752, 11, 3))
-        dlong = -56653L
-        assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(1752, 11, 6))
-        dlong = -56648L
-        assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(1752, 11, 13))
+        assert_equal(p.long_to_datetime(dlong, 'W'), d.datetime(1752, 11, 12))
 
         # Days
         dlong = -79316L
@@ -746,11 +745,40 @@ class TestCreation():
         assert_equal(p.long_to_datetime(dlong, 'D'), d.datetime(1752, 11, 11))
         dlong = -79306L
         assert_equal(p.long_to_datetime(dlong, 'D'), d.datetime(1752, 11, 13))
+        
+		# Business Days
+        dlong = -56654L
+        assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(1752, 11, 3))
+        dlong = -56653L
+        assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(1752, 11, 6))
+        dlong = -56648L
+        assert_equal(p.long_to_datetime(dlong, 'B'), d.datetime(1752, 11, 13))
+
+    ########################################################################
+    ## Sanity Check
+    ########################################################################
+
+    def test_sanity(self):
+        "Sanity check."
+
+        # Doesn't test Y, M, W, B because of specific dates in dstring_dict
+        #  Wouldn't be a problem to test for them, and might not be a bad idea
+        #  But those tests would be extraneous for a simple sanity check
+        freq_list    = ['D', 'h', 'm', 's', 'ms', 'us']
+        dstring_dict = {'1800-01-01': (1800, 1, 1), '1960-02-02': (1960, 2, 2), \
+                        '1970-01-01': (1970, 1, 1), '1980-01-01': (1980, 1, 1), 
+                        '2001-07-18': (2001, 7, 18), '2002-12-31': (2002, 12, 31),
+                        '2010-12-10': (2010, 12, 10),  '2020-02-19': (2020, 2, 19)}
+        for freq in freq_list:
+            for dstring, dtuple in dstring_dict.items():
+                assert_equal(p.long_to_datetime(p.date_to_long(dstring, freq), freq), \
+							 d.datetime(dtuple[0], dtuple[1], dtuple[2]))
+                         
 
     ########################################################################
     ## Out of Range Tests
     ########################################################################
 
     def test_out_of_range(self): 
-    	"Test out of range dates."
+        "Test out of range dates."
 
