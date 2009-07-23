@@ -772,7 +772,7 @@ class TestCreation():
         for freq in freq_list:
             for dstring, dtuple in dstring_dict.items():
                 assert_equal(p.long_to_datetime(p.date_to_long(dstring, freq), freq), \
-							 d.datetime(dtuple[0], dtuple[1], dtuple[2]))
+							 d.datetime(*dtuple))
                          
 
     ########################################################################
