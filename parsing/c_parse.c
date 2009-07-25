@@ -840,7 +840,7 @@ long_to_datestring(PyObject *self, PyObject *args)
 {
 	PyObject *long_arg = NULL;    // string or datetime
 	PyObject *freq_arg = NULL;	  // frequency as string
-	PyObject *result   = NULL;	  // long result
+	PyObject *result   = NULL;	  // string result
 
 	long long dlong = 0;          // Stores the long_arg
 	int freq = FR_ERR;			  // freq_arg is a PyObject to be parsed to freq
@@ -894,19 +894,57 @@ long_to_datestring(PyObject *self, PyObject *args)
 		// Format the dstruct to create the datetime object
 		dstruct = long_to_datestruct(dlong, freq);
 		// Create the Python String formatted according frequency
-		if (freq == FR_Y) {
-			result = PyString_FromFormat("%d", dstruct.year);
-		} else if (freq == FR_M) {
-			result = PyString_FromFormat("%d-%d", dstruct.year, dstruct.month);
-		} else if ((freq == FR_W) || (freq == FR_B) || freq == (FR_D)) {
-			result = PyString_FromFormat("%d-%d-%d", dstruct.year, dstruct.month, dstruct.day);
+		if ((freq == FR_Y) || (freq == (FR_M) ||
+		   (freq == FR_W) || (freq == FR_B) || freq == (FR_D))) {
+			// Good. PyString_FromFormat won't let me do simple printf stuff
+			// like "%04d-%02d-%02d" for simple date formatting.
+			// Now I have to write this stuff from scratch...
+		
+			char year[32];
+			char month[32];
+			char day[32];
+				
+			sprintf(year,  "%04d", dstruct.year);
+			sprintf(month, "%02d", dstruct.month);
+			sprintf(day,   "%02d", dstruct.day);
+
+			// Now form the result with our char*
+			result = PyString_FromFormat("%s-%s-%s", year, month, day);
 		} else if ((freq == FR_h) || (freq == FR_m) || freq == (FR_s)) {
-			result = PyString_FromFormat("%d-%d-%d %d:%d:%d", 
-					 dstruct.year, dstruct.month, dstruct.day,
-					 dstruct.hour, dstruct.minute, dstruct.second);
+			char year[32];
+			char month[32];
+			char day[32];
+			char hour[32];
+			char minute[32];
+			char second[32];
+				
+			sprintf(year,   "%04d", dstruct.year);
+			sprintf(month,  "%02d", dstruct.month);
+			sprintf(day,    "%02d", dstruct.day);
+			sprintf(hour,   "%02d", dstruct.hour);
+			sprintf(minute, "%02d", dstruct.minute);
+			sprintf(second, "%02d", dstruct.second);
+
+			result = PyString_FromFormat("%s-%s-%s %s:%s:%s", year,
+				     month, day, hour, minute, second);	
 		} else if ((freq == FR_ms) || (freq == FR_us)) {
-			result = PyString_FromFormat("%d-%d-%d %d:%d:%d.%d", dstruct.year, dstruct.month,
-					 dstruct.day, dstruct.hour, dstruct.minute, dstruct.second,
+			char year[32];
+			char month[32];
+			char day[32];
+			char hour[32];
+			char minute[32];
+			char second[32];
+			char usecond[32];
+				
+			sprintf(year,   "%04d", dstruct.year);
+			sprintf(month,  "%02d", dstruct.month);
+			sprintf(day,    "%02d", dstruct.day);
+			sprintf(hour,   "%02d", dstruct.hour);
+			sprintf(minute, "%02d", dstruct.minute);
+			sprintf(second, "%02d", dstruct.second);
+			result = PyString_FromFormat("%s-%s-%s %s:%s:%s.%d", 
+					 year, month, day, 
+					 hour, minute, second,
 					 dstruct.usecond);
 		}
 	}
