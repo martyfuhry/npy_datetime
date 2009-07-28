@@ -900,9 +900,9 @@ long_to_datestring(PyObject *self, PyObject *args)
 			// like "%04d-%02d-%02d" for simple date formatting.
 			// Now I have to write this stuff from scratch...
 		
-			char year[32];
-			char month[32];
-			char day[32];
+			char year[4];
+			char month[2];
+			char day[2];
 				
 			sprintf(year,  "%04d", dstruct.year);
 			sprintf(month, "%02d", dstruct.month);
@@ -911,12 +911,12 @@ long_to_datestring(PyObject *self, PyObject *args)
 			// Now form the result with our char*
 			result = PyString_FromFormat("%s-%s-%s", year, month, day);
 		} else if ((freq == FR_h) || (freq == FR_m) || freq == (FR_s)) {
-			char year[32];
-			char month[32];
-			char day[32];
-			char hour[32];
-			char minute[32];
-			char second[32];
+			char year[4];
+			char month[2];
+			char day[2];
+			char hour[2];
+			char minute[2];
+			char second[2];
 				
 			sprintf(year,   "%04d", dstruct.year);
 			sprintf(month,  "%02d", dstruct.month);
@@ -928,13 +928,13 @@ long_to_datestring(PyObject *self, PyObject *args)
 			result = PyString_FromFormat("%s-%s-%s %s:%s:%s", year,
 				     month, day, hour, minute, second);	
 		} else if ((freq == FR_ms) || (freq == FR_us)) {
-			char year[32];
-			char month[32];
-			char day[32];
-			char hour[32];
-			char minute[32];
-			char second[32];
-			char usecond[32];
+			char year[4];
+			char month[2];
+			char day[2];
+			char hour[2];
+			char minute[2];
+			char second[2];
+			char usecond[24];
 				
 			sprintf(year,   "%04d", dstruct.year);
 			sprintf(month,  "%02d", dstruct.month);
