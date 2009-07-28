@@ -622,6 +622,25 @@ datestruct long_to_datestruct(long long dlong, int frequency)
 		month = ymd.month;
 		day   = ymd.day;
 	} else if (frequency == FR_B) {
+		ymdstruct ymd;
+		long long absdays;
+		if (dlong >= 0) {
+			// Special Case
+			if (dlong < 3)
+				absdays = dlong + (dlong / 2) * 2;
+			else
+				absdays = 7 * ((dlong + 3) / 5) + ((dlong + 3) % 5) - 3;
+		} else {
+			// Special Case
+			if (dlong > -7)
+				absdays = dlong + (dlong / 4) * 2;
+			else
+				absdays = 7 * ((dlong - 1) / 5) + ((dlong - 1) % 5) + 1;
+		}
+		ymd = long_to_ymdstruct(absdays);
+		year  = ymd.year;
+		month = ymd.month;
+		day   = ymd.day;
 	} else if (frequency == FR_D) {
 		ymdstruct ymd = long_to_ymdstruct(dlong);
 		year  = ymd.year;
@@ -629,17 +648,16 @@ datestruct long_to_datestruct(long long dlong, int frequency)
 		day   = ymd.day;	
 	} else if (frequency == FR_h) {
 		ymdstruct ymd;	
-		hmsstruct hms;
 		if (dlong >= 0) {
 			ymd  = long_to_ymdstruct(dlong / 24);
+			hour  = dlong % 24;
 		} else {
 			ymd  = long_to_ymdstruct((dlong - 23) / 24);
+			hour = 24 + (dlong + 1) % 24 - 1;
 		}
-		hms  = long_to_hmsstruct(dlong * 3600);
 		year  = ymd.year;
 		month = ymd.month;
 		day   = ymd.day;
-		hour  = hms.hour;
 	} else if (frequency == FR_m) {
 		ymdstruct ymd;
 		hmsstruct hms;
@@ -817,6 +835,132 @@ long_to_datetime(PyObject *self, PyObject *args)
 	return result;
 }
 
+PyObject *
+long_to_datestring(PyObject *self, PyObject *args)
+{
+	PyObject *long_arg = NULL;    // string or datetime
+	PyObject *freq_arg = NULL;	  // frequency as string
+	PyObject *result   = NULL;	  // string result
+
+	long long dlong = 0;          // Stores the long_arg
+	int freq = FR_ERR;			  // freq_arg is a PyObject to be parsed to freq
+	datestruct dstruct;		      // To store date values
+
+	// macro PyDateTime_IMPORT must be invoked for PyDateTime_Check
+	PyDateTime_IMPORT;
+
+	// Make sure the callback function is set
+	//  ! This doesn't check to make sure it's the right callback function
+	//  ! This should all be done in some init script
+	if (!PyCallable_Check(callback))
+	{
+		PyErr_SetString(PyExc_TypeError, "callback not set.");
+		return NULL;
+	}
+
+	// Parse out long_arg & freq_arg
+	if (!PyArg_ParseTuple(args, "OO", &long_arg, &freq_arg))
+	{
+		return NULL;
+	}
+
+	// Make sure frequency is not NULL
+	if (!freq_arg)
+	{	
+		PyErr_SetString(PyExc_TypeError, "frequency not set.");
+		return NULL;
+	}
+
+	// Parse out frequency into an int so we can use it easily
+	if ((freq = freq_to_int(PyString_AsString(freq_arg))) == FR_ERR)
+	{
+		// If the frequency is invalid, set an error and return null
+		PyErr_SetString(PyExc_TypeError, "invalid frequency.");
+		return NULL;
+	}
+	// Make sure long_arg is not NULL
+	if (!long_arg)
+	{
+		PyErr_SetString(PyExc_TypeError, "no date provided.");
+		return NULL;
+	}
+	// Be sure long_arg is a long
+	if (PyLong_Check(long_arg))
+	{
+
+		// XXX PyINCREF here?
+		// Convert long_arg to a long long
+		dlong = PyLong_AsLongLong(long_arg);
+		// Format the dstruct to create the datetime object
+		dstruct = long_to_datestruct(dlong, freq);
+		// Create the Python String formatted according frequency
+		if ((freq == FR_Y) || (freq == (FR_M) ||
+		   (freq == FR_W) || (freq == FR_B) || freq == (FR_D))) {
+			// Good. PyString_FromFormat won't let me do simple printf stuff
+			// like "%04d-%02d-%02d" for simple date formatting.
+			// Now I have to write this stuff from scratch...
+		
+			char year[4];
+			char month[2];
+			char day[2];
+				
+			sprintf(year,  "%04d", dstruct.year);
+			sprintf(month, "%02d", dstruct.month);
+			sprintf(day,   "%02d", dstruct.day);
+
+			// Now form the result with our char*
+			result = PyString_FromFormat("%s-%s-%s", year, month, day);
+		} else if ((freq == FR_h) || (freq == FR_m) || freq == (FR_s)) {
+			char year[4];
+			char month[2];
+			char day[2];
+			char hour[2];
+			char minute[2];
+			char second[2];
+				
+			sprintf(year,   "%04d", dstruct.year);
+			sprintf(month,  "%02d", dstruct.month);
+			sprintf(day,    "%02d", dstruct.day);
+			sprintf(hour,   "%02d", dstruct.hour);
+			sprintf(minute, "%02d", dstruct.minute);
+			sprintf(second, "%02d", dstruct.second);
+
+			result = PyString_FromFormat("%s-%s-%s %s:%s:%s", year,
+				     month, day, hour, minute, second);	
+		} else if ((freq == FR_ms) || (freq == FR_us)) {
+			char year[4];
+			char month[2];
+			char day[2];
+			char hour[2];
+			char minute[2];
+			char second[2];
+			char usecond[24];
+				
+			sprintf(year,   "%04d", dstruct.year);
+			sprintf(month,  "%02d", dstruct.month);
+			sprintf(day,    "%02d", dstruct.day);
+			sprintf(hour,   "%02d", dstruct.hour);
+			sprintf(minute, "%02d", dstruct.minute);
+			sprintf(second, "%02d", dstruct.second);
+			result = PyString_FromFormat("%s-%s-%s %s:%s:%s.%d", 
+					 year, month, day, 
+					 hour, minute, second,
+					 dstruct.usecond);
+		}
+	}
+	else
+	{
+		// long_arg is not a long; error
+		PyErr_SetString(PyExc_TypeError, "invalid date type");
+		return NULL;
+	}
+
+	if (PyErr_Occurred())
+		return NULL;
+
+	return result;
+}
+
 //=============
 // module
 // ============
@@ -830,6 +974,8 @@ static PyMethodDef methods[] = {
 	{"date_to_long", date_to_long,
 	 METH_VARARGS, ""},
 	{"long_to_datetime", long_to_datetime,
+	 METH_VARARGS, ""},
+	{"long_to_datestring", long_to_datestring,
 	 METH_VARARGS, ""},
 	{NULL, NULL}
 };
