@@ -132,6 +132,12 @@ set_callback(PyObject *dummy, PyObject *args)
 
 PyObject *DateCalc_RangeError = NULL;
 PyObject *DateCalc_Error      = NULL;
+
+// Frequency Checker
+int _check_freq(int freq)
+{
+	return freq;
+}
 /*
 ====================================================
 == Beginning of section borrowed from mx.DateTime ==
@@ -279,6 +285,7 @@ onError:
 }
 
 // Returns absolute seconds from an hour, minute, and second
+static
 long long abssecs_from_hms(int hour, int minute, int second)
 {
 	// Needs to perform checks for valid times
@@ -376,6 +383,7 @@ hmsstruct long_to_hmsstruct(long long dlong)
 
 // Takes a datetime object and a string as frequency
 // Returns the number of (frequency) since Jan 1, 1970
+static 
 long long datetime_to_long(PyObject* datetime, int frequency)
 {
 	int year = 0, month = 0, day = 0, hour = 0, 
@@ -479,6 +487,7 @@ long long datetime_to_long(PyObject* datetime, int frequency)
 //  parses that into a datetime and passes the datetime object 
 //  to datetime_to_long
 // Returns the number of (frequency) since Jan 1, 1970
+static
 long long datestring_to_long(PyObject *string, int frequency)
 {
 	// Send to datetime_to_long
@@ -516,7 +525,7 @@ long long datestring_to_long(PyObject *string, int frequency)
 // Decides if the arguments are a string or a datetime object
 //  and passes them to the correct datestring/datetime function
 // Returns a PyLong generated from the appropriate function
-PyObject *
+static PyObject *
 date_to_long(PyObject *self, PyObject *args)
 {
 	PyObject *date_arg = NULL;    // string or datetime
@@ -596,6 +605,7 @@ date_to_long(PyObject *self, PyObject *args)
 
 // Takes a long long value and a frequency
 // Returns a datestruct formatted with the correct calendar values
+static 
 datestruct long_to_datestruct(long long dlong, int frequency)
 {
 	int year = 1970, month = 1, day = 1, 
@@ -759,7 +769,7 @@ datestruct long_to_datestruct(long long dlong, int frequency)
 
 // Takes a long and a frequency
 // Returns a Python DateTime Object
-PyObject *
+static PyObject *
 long_to_datetime(PyObject *self, PyObject *args)
 {
 	PyObject *long_arg = NULL;    // string or datetime
@@ -835,7 +845,9 @@ long_to_datetime(PyObject *self, PyObject *args)
 	return result;
 }
 
-PyObject *
+// Takes a long and a frequency
+// Returns a string formatted to represent the date from the long
+static PyObject *
 long_to_datestring(PyObject *self, PyObject *args)
 {
 	PyObject *long_arg = NULL;    // string or datetime
@@ -893,6 +905,12 @@ long_to_datestring(PyObject *self, PyObject *args)
 		dlong = PyLong_AsLongLong(long_arg);
 		// Format the dstruct to create the datetime object
 		dstruct = long_to_datestruct(dlong, freq);
+		// Make sure date is less than 4 digits
+		if (dstruct.year > 9999)
+		{
+			PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
+			return NULL;
+		}
 		// Create the Python String formatted according frequency
 		if ((freq == FR_Y) || (freq == (FR_M) ||
 		   (freq == FR_W) || (freq == FR_B) || freq == (FR_D))) {
@@ -961,9 +979,1112 @@ long_to_datestring(PyObject *self, PyObject *args)
 	return result;
 }
 
-//=============
-// module
-// ============
+//==================================================
+// Frequency Conversions
+//==================================================
+
+// Taken from TimeSeries //
+// helpers for frequency conversion routines
+
+static long DtoB_weekday(long fromDate) { return (((fromDate) / 7) * 5) + (fromDate)%7; }
+
+static long DtoB_WeekendToMonday(long absdate, int day_of_week) {
+
+    if (day_of_week > 4) {
+        //change to Monday after weekend
+        absdate += (7 - day_of_week);
+    }
+    return DtoB_weekday(absdate);
+}
+
+static long DtoB_WeekendToFriday(long absdate, int day_of_week) {
+
+    if (day_of_week > 4) {
+        //change to friday before weekend
+        absdate -= (day_of_week - 4);
+    }
+    return DtoB_weekday(absdate);
+}
+
+// Taken from TimeSeries //
+// conversion routines for frequencies
+
+
+// *************** From Day *************** //
+static long long as_freq_D2Y(long long dlong)
+{
+	ymdstruct ymd = long_to_ymdstruct(dlong);
+	return ymd.year;
+}
+static long long as_freq_D2M(long long dlong)
+{
+	ymdstruct ymd = long_to_ymdstruct(dlong);
+	return ymd.month;
+}
+static long long as_freq_D2W(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_D2B(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_D2h(long long dlong)
+{
+	return dlong * 24LL;
+}
+static long long as_freq_D2m(long long dlong)
+{
+	return dlong * 1440LL;
+}
+static long long as_freq_D2s(long long dlong)
+{
+	return dlong * 86400LL;
+}
+static long long as_freq_D2ms(long long dlong)
+{
+	return dlong * 86400000LL;
+}
+static long long as_freq_D2us(long long dlong)
+{
+	return dlong * 86400000000LL;
+}
+static long long as_freq_D2ns(long long dlong)
+{
+	return dlong * 86400000000000LL;
+}
+static long long as_freq_D2ps(long long dlong)
+{
+	return dlong * 86400000000000000LL;
+}
+static long long as_freq_D2fs(long long dlong)
+{
+	return dlong * 86400000000000000000LL;
+}
+static long long as_freq_D2as(long long dlong)
+{
+	return dlong * 86400000000000000000000LL;
+}
+
+// *************** From Year *************** //
+static long long as_freq_Y2M(long long dlong)
+{
+	return dlong * 12;
+}
+static long long as_freq_Y2W(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_Y2B(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_Y2D(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_Y2h(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_Y2m(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_Y2s(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_Y2ms(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_Y2us(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_Y2ns(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_Y2ps(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_Y2fs(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_Y2as(long long dlong)
+{
+	return dlong;
+}
+
+// *************** From Month *************** //
+static long long as_freq_M2Y(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_M2D(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_M2W(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_M2B(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_M2h(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_M2m(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_M2s(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_M2ms(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_M2us(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_M2ns(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_M2ps(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_M2fs(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_M2as(long long dlong)
+{
+	return dlong;
+}
+
+// *************** From Week *************** //
+static long long as_freq_W2Y(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_W2M(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_W2B(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_W2D(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_W2h(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_W2m(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_W2s(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_W2ms(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_W2us(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_W2ns(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_W2ps(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_W2fs(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_W2as(long long dlong)
+{
+	return dlong;
+}
+
+// *************** From Business Day *************** //
+static long long as_freq_B2Y(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_B2M(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_B2W(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_B2D(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_B2h(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_B2m(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_B2s(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_B2ms(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_B2us(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_B2ns(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_B2ps(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_B2fs(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_B2as(long long dlong)
+{
+	return dlong;
+}
+
+// *************** From Hour *************** //
+static long long as_freq_h2Y(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_h2M(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_h2W(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_h2B(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_h2D(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_h2m(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_h2s(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_h2ms(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_h2us(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_h2ns(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_h2ps(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_h2fs(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_h2as(long long dlong)
+{
+	return dlong;
+}
+
+// *************** From Minute *************** //
+static long long as_freq_m2Y(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_m2M(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_m2W(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_m2B(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_m2h(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_m2D(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_m2s(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_m2ms(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_m2us(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_m2ns(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_m2ps(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_m2fs(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_m2as(long long dlong)
+{
+	return dlong;
+}
+
+// *************** From Second *************** //
+static long long as_freq_s2Y(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_s2M(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_s2W(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_s2B(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_s2h(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_s2m(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_s2D(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_s2ms(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_s2us(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_s2ns(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_s2ps(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_s2fs(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_s2as(long long dlong)
+{
+	return dlong;
+}
+
+// *************** From Millisecond *************** //
+static long long as_freq_ms2Y(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ms2M(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ms2W(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ms2B(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ms2h(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ms2m(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ms2s(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ms2D(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ms2us(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ms2ns(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ms2ps(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ms2fs(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ms2as(long long dlong)
+{
+	return dlong;
+}
+
+// *************** From Microsecond *************** //
+static long long as_freq_us2Y(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_us2M(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_us2W(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_us2B(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_us2h(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_us2m(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_us2s(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_us2ms(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_us2D(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_us2ns(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_us2ps(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_us2fs(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_us2as(long long dlong)
+{
+	return dlong;
+}
+
+// *************** From Nanosecond *************** //
+static long long as_freq_ns2Y(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ns2M(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ns2W(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ns2B(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ns2h(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ns2m(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ns2s(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ns2ms(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ns2us(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ns2D(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ns2ps(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ns2fs(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ns2as(long long dlong)
+{
+	return dlong;
+}
+
+// *************** From Picosecond *************** //
+static long long as_freq_ps2Y(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ps2M(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ps2W(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ps2B(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ps2h(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ps2m(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ps2s(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ps2ms(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ps2us(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ps2ns(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ps2D(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ps2fs(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_ps2as(long long dlong)
+{
+	return dlong;
+}
+
+// *************** From Femtosecond *************** //
+static long long as_freq_fs2Y(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_fs2M(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_fs2W(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_fs2B(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_fs2h(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_fs2m(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_fs2s(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_fs2ms(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_fs2us(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_fs2ns(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_fs2ps(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_fs2D(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_fs2as(long long dlong)
+{
+	return dlong;
+}
+
+// *************** From Attosecond *************** //
+static long long as_freq_as2Y(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_as2M(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_as2W(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_as2B(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_as2h(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_as2m(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_as2s(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_as2ms(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_as2us(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_as2ns(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_as2ps(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_as2fs(long long dlong)
+{
+	return dlong;
+}
+static long long as_freq_as2D(long long dlong)
+{
+	return dlong;
+}
+
+// Convert (dlong, ifreq) to a new date based on ofreq
+// Returns the long value to represent the date with the ofreq
+static long long as_freq_to_long(long long dlong, int ifreq, int ofreq)
+{
+	long long result = 0;
+	if (ifreq == ofreq)
+		return -1;// Error out
+
+	// Switch to decide which routine to run
+	switch (ifreq) 
+	{
+		case FR_Y:
+			switch (ofreq) 
+			{
+				case FR_M: return as_freq_Y2M(dlong); break;
+				case FR_W: return as_freq_Y2W(dlong); break;
+				case FR_B: return as_freq_Y2B(dlong); break;
+				case FR_D: return as_freq_Y2D(dlong); break;
+				case FR_h: return as_freq_Y2h(dlong); break;
+				case FR_m: return as_freq_Y2m(dlong); break;
+				case FR_s: return as_freq_Y2s(dlong); break;
+				case FR_ms:return as_freq_Y2ms(dlong); break;
+				case FR_us:return as_freq_Y2us(dlong); break;
+				case FR_ns:return as_freq_Y2ns(dlong); break;
+				case FR_ps:return as_freq_Y2ps(dlong); break;
+				case FR_fs:return as_freq_Y2fs(dlong); break;
+				case FR_as:return as_freq_Y2as(dlong); break;
+			}
+			break;
+		case FR_M:
+			switch (ofreq) {
+				case FR_Y: return as_freq_M2Y(dlong); break;
+				case FR_W: return as_freq_M2W(dlong); break;
+				case FR_B: return as_freq_M2B(dlong); break;
+				case FR_D: return as_freq_M2D(dlong); break;
+				case FR_h: return as_freq_M2h(dlong); break; 
+				case FR_m: return as_freq_M2m(dlong); break; 
+				case FR_s: return as_freq_M2s(dlong); break;
+				case FR_ms: return as_freq_M2ms(dlong); break;
+				case FR_us: return as_freq_M2us(dlong); break;
+				case FR_ns: return as_freq_M2ns(dlong); break;
+				case FR_ps: return as_freq_M2ps(dlong); break;
+				case FR_fs: return as_freq_M2fs(dlong); break;
+				case FR_as: return as_freq_M2as(dlong); break;
+			}
+			break;
+		case FR_W:
+			switch (ofreq) {
+				case FR_Y: return as_freq_W2Y(dlong); break;
+				case FR_M: return as_freq_W2M(dlong); break;
+				case FR_B: return as_freq_W2B(dlong); break;
+				case FR_D: return as_freq_W2D(dlong); break;
+				case FR_h: return as_freq_W2h(dlong); break;
+				case FR_m: return as_freq_W2m(dlong); break;
+				case FR_s: return as_freq_W2s(dlong); break;
+				case FR_ms: return as_freq_W2ms(dlong); break;
+				case FR_us: return as_freq_W2us(dlong); break;
+				case FR_ns: return as_freq_W2ns(dlong); break;
+				case FR_ps: return as_freq_W2ps(dlong); break;
+				case FR_fs: return as_freq_W2fs(dlong); break;
+				case FR_as: return as_freq_W2as(dlong); break;
+			}
+			break;
+		case FR_B:
+			switch (ofreq) {
+				case FR_Y: return as_freq_B2Y(dlong); break;
+				case FR_M: return as_freq_B2M(dlong); break;  
+				case FR_W: return as_freq_B2W(dlong); break;
+				case FR_D: return as_freq_B2D(dlong); break;
+				case FR_h: return as_freq_B2h(dlong); break;
+				case FR_m: return as_freq_B2m(dlong); break;
+				case FR_s: return as_freq_B2s(dlong); break;
+				case FR_ms: return as_freq_B2ms(dlong); break;
+				case FR_us: return as_freq_B2us(dlong); break;
+				case FR_ns: return as_freq_B2ns(dlong); break;
+				case FR_ps: return as_freq_B2ps(dlong); break;
+				case FR_fs: return as_freq_B2fs(dlong); break;
+				case FR_as: return as_freq_B2as(dlong); break;
+			}
+		break;
+		case FR_D:
+			switch (ofreq) {
+				case FR_Y: return as_freq_D2Y(dlong); break;
+				case FR_M: return as_freq_D2M(dlong); break;
+				case FR_W: return as_freq_D2W(dlong); break;
+				case FR_B: return as_freq_D2B(dlong); break;
+				case FR_h: return as_freq_D2h(dlong); break;
+				case FR_m: return as_freq_D2m(dlong); break;
+				case FR_s: return as_freq_D2s(dlong); break;
+				case FR_ms: return as_freq_D2ms(dlong); break;
+				case FR_us: return as_freq_D2us(dlong); break;
+				case FR_ns: return as_freq_D2ns(dlong); break;
+				case FR_ps: return as_freq_D2ps(dlong); break;
+				case FR_fs: return as_freq_D2fs(dlong); break;
+				case FR_as: return as_freq_D2as(dlong); break;
+			}
+			break;
+		case FR_h:
+			switch (ofreq) {
+				case FR_Y: return as_freq_h2Y(dlong); break;
+				case FR_M: return as_freq_h2M(dlong); break;
+				case FR_W: return as_freq_h2W(dlong); break;
+				case FR_B: return as_freq_h2B(dlong); break;
+				case FR_D: return as_freq_h2D(dlong); break;
+				case FR_m: return as_freq_h2m(dlong); break;
+				case FR_s: return as_freq_h2s(dlong); break;
+				case FR_ms: return as_freq_h2ms(dlong); break;
+				case FR_us: return as_freq_h2us(dlong); break;
+				case FR_ns: return as_freq_h2ns(dlong); break;
+				case FR_ps: return as_freq_h2ps(dlong); break;
+				case FR_fs: return as_freq_h2fs(dlong); break;
+				case FR_as: return as_freq_h2as(dlong); break;
+			}
+			break;
+		case FR_m:
+			switch (ofreq) {
+				case FR_Y: return as_freq_m2Y(dlong); break;
+				case FR_M: return as_freq_m2M(dlong); break;
+				case FR_W: return as_freq_m2W(dlong); break;
+				case FR_B: return as_freq_m2B(dlong); break;
+				case FR_D: return as_freq_m2D(dlong); break;
+				case FR_h: return as_freq_m2h(dlong); break;
+				case FR_s: return as_freq_m2s(dlong); break;
+				case FR_us: return as_freq_m2us(dlong); break;
+				case FR_ms: return as_freq_m2ms(dlong); break;
+				case FR_ns: return as_freq_m2ns(dlong); break;
+				case FR_ps: return as_freq_m2ps(dlong); break;
+				case FR_fs: return as_freq_m2fs(dlong); break;
+				case FR_as: return as_freq_m2as(dlong); break;
+			}
+			break;
+		case FR_s:
+			switch (ofreq) {
+				case FR_Y: return as_freq_s2Y(dlong); break;
+				case FR_M: return as_freq_s2M(dlong); break;
+				case FR_W: return as_freq_s2W(dlong); break;
+				case FR_B: return as_freq_s2B(dlong); break;
+				case FR_D: return as_freq_s2D(dlong); break;
+				case FR_h: return as_freq_s2h(dlong); break;
+				case FR_m: return as_freq_s2m(dlong); break;
+				case FR_ms: return as_freq_s2ms(dlong); break;
+				case FR_us: return as_freq_s2us(dlong); break;
+				case FR_ns: return as_freq_s2ns(dlong); break;
+				case FR_ps: return as_freq_s2ps(dlong); break;
+				case FR_fs: return as_freq_s2fs(dlong); break;
+				case FR_as: return as_freq_s2as(dlong); break;
+			}
+			break;
+		case FR_ms:
+			switch (ofreq) {
+				case FR_Y: return as_freq_ms2Y(dlong); break;
+				case FR_M: return as_freq_ms2M(dlong); break;
+				case FR_W: return as_freq_ms2W(dlong); break;
+				case FR_B: return as_freq_ms2B(dlong); break;
+				case FR_D: return as_freq_ms2D(dlong); break;
+				case FR_h: return as_freq_ms2h(dlong); break;
+				case FR_m: return as_freq_ms2m(dlong); break;
+				case FR_s: return as_freq_ms2s(dlong); break;
+				case FR_us: return as_freq_ms2us(dlong); break;
+				case FR_ns: return as_freq_ms2ns(dlong); break;
+				case FR_ps: return as_freq_ms2ps(dlong); break;
+				case FR_fs: return as_freq_ms2fs(dlong); break;
+				case FR_as: return as_freq_ms2as(dlong); break;
+			}
+			break;
+		case FR_us:
+			switch (ofreq) {
+				case FR_Y: return as_freq_us2Y(dlong); break;
+				case FR_M: return as_freq_us2M(dlong); break;
+				case FR_W: return as_freq_us2D(dlong); break;
+				case FR_B: return as_freq_us2B(dlong); break;
+				case FR_D: return as_freq_us2D(dlong); break;
+				case FR_h: return as_freq_us2h(dlong); break;
+				case FR_m: return as_freq_us2m(dlong); break;
+				case FR_s: return as_freq_us2s(dlong); break;
+				case FR_ms: return as_freq_us2ms(dlong); break;
+				case FR_ps: return as_freq_us2ps(dlong); break;
+				case FR_fs: return as_freq_us2fs(dlong); break;
+				case FR_as: return as_freq_us2as(dlong); break;
+			}
+			break;
+		case FR_ns:
+			switch (ofreq) {
+				case FR_Y: return as_freq_ns2Y(dlong); break;
+				case FR_M: return as_freq_ns2M(dlong); break;
+				case FR_W: return as_freq_ns2W(dlong); break;
+				case FR_B: return as_freq_ns2B(dlong); break;
+				case FR_D: return as_freq_ns2D(dlong); break;
+				case FR_h: return as_freq_ns2h(dlong); break;
+				case FR_m: return as_freq_ns2m(dlong); break;
+				case FR_s: return as_freq_ns2s(dlong); break;
+				case FR_ms: return as_freq_ns2ms(dlong); break;
+				case FR_us: return as_freq_ns2us(dlong); break;
+				case FR_ps: return as_freq_ns2ps(dlong); break;
+				case FR_fs: return as_freq_ns2fs(dlong); break;
+				case FR_as: return as_freq_ns2as(dlong); break;
+			}
+			break;
+		case FR_ps:
+			switch (ofreq) {
+				case FR_Y: return as_freq_ps2Y(dlong); break;
+				case FR_M: return as_freq_ps2M(dlong); break;
+				case FR_W: return as_freq_ps2W(dlong); break;
+				case FR_B: return as_freq_ps2B(dlong); break;
+				case FR_D: return as_freq_ps2D(dlong); break;
+				case FR_h: return as_freq_ps2h(dlong); break;
+				case FR_m: return as_freq_ps2m(dlong); break;
+				case FR_s: return as_freq_ps2s(dlong); break;
+				case FR_ms: return as_freq_ps2ms(dlong); break;
+				case FR_us: return as_freq_ps2us(dlong); break;
+				case FR_ns: return as_freq_ps2ns(dlong); break;
+				case FR_fs: return as_freq_ps2fs(dlong); break;
+				case FR_as: return as_freq_ps2as(dlong); break;
+			}
+			break;
+		case FR_fs:
+			switch (ofreq) {
+				case FR_Y: return as_freq_fs2Y(dlong); break;
+				case FR_M: return as_freq_fs2M(dlong); break;
+				case FR_W: return as_freq_fs2W(dlong); break;
+				case FR_B: return as_freq_fs2B(dlong); break;
+				case FR_D: return as_freq_fs2D(dlong); break;
+				case FR_h: return as_freq_fs2h(dlong); break;
+				case FR_m: return as_freq_fs2m(dlong); break;
+				case FR_s: return as_freq_fs2s(dlong); break;
+				case FR_ms: return as_freq_fs2ms(dlong); break;
+				case FR_us: return as_freq_fs2us(dlong); break;
+				case FR_ns: return as_freq_fs2ns(dlong); break;
+				case FR_ps: return as_freq_fs2ps(dlong); break;
+				case FR_as: return as_freq_fs2as(dlong); break;
+			}
+			break;
+		case FR_as:
+			switch (ofreq) {
+				case FR_Y: return as_freq_as2Y(dlong); break;
+				case FR_M: return as_freq_as2M(dlong); break;
+				case FR_W: return as_freq_as2W(dlong); break;
+				case FR_B: return as_freq_as2B(dlong); break;
+				case FR_D: return as_freq_as2D(dlong); break;
+				case FR_h: return as_freq_as2h(dlong); break;
+				case FR_m: return as_freq_as2m(dlong); break;
+				case FR_s: return as_freq_as2s(dlong); break;
+				case FR_ms: return as_freq_as2ms(dlong); break;
+				case FR_us: return as_freq_as2us(dlong); break;
+				case FR_ns: return as_freq_as2ns(dlong); break;
+				case FR_ps: return as_freq_as2ps(dlong); break;
+				case FR_fs: return as_freq_as2fs(dlong); break;
+			}
+			break;
+		default:
+			return -1;
+			break;
+			// error out
+		}
+	
+	return result;
+}
+
+// Takes a long and an in frequency ( to emulate a date )
+//  and an out frequency to learn the conversion to run
+// Returns a long
+static PyObject *
+convert_freq(PyObject *self, PyObject *args)
+{
+	PyObject *long_arg = NULL;    // string or datetime
+	PyObject *ifreq_arg = NULL;	  // in frequency as string
+	PyObject *ofreq_arg = NULL;	  // out frequency as string
+	PyObject *result   = NULL;	  // long result
+
+	long long dlong = 0;          // Stores the long_arg
+	int ifreq = FR_ERR;			  // freq_arg is a PyObject to be parsed to freq
+	int ofreq = FR_ERR;			  // freq_arg is a PyObject to be parsed to freq
+
+	// Parse out long_arg & freq_arg
+	if (!PyArg_ParseTuple(args, "OOO", &long_arg, &ifreq_arg, &ofreq_arg))
+		return NULL;
+	// Parse the in frequency into an int so we can use it easily
+	if ((ifreq = freq_to_int(PyString_AsString(ifreq_arg))) == FR_ERR)
+	{
+		// If the frequency is invalid, set an error and return null
+		PyErr_SetString(PyExc_TypeError, "invalid frequency.");
+		return NULL;
+	}
+	// Parse the out frequency into an int so we can use it easily
+	if ((ofreq = freq_to_int(PyString_AsString(ofreq_arg))) == FR_ERR)
+	{
+		// If the frequency is invalid, set an error and return null
+		PyErr_SetString(PyExc_TypeError, "invalid frequency.");
+		return NULL;
+	}
+
+	// Make sure long_arg is not NULL
+	if (!long_arg)
+	{
+		PyErr_SetString(PyExc_TypeError, "no date provided.");
+		return NULL;
+	}
+	if (PyLong_Check(long_arg))
+    {
+		// XXX PyINCREF here?
+		// Convert long_arg to a long long
+		dlong = PyLong_AsLongLong(long_arg);
+	
+		// All the basic tests are out of the way, now we need to figure out 
+		//  which frequency conversion to run based on the ofreq
+		result = PyLong_FromLongLong(as_freq_to_long(dlong, ifreq, ofreq));
+	}
+	else
+	{
+		PyErr_SetString(PyExc_TypeError, "invalid long entry.");
+		return NULL;
+	}
+	return result;
+}
+//==================================================
+// Module
+//==================================================
 
 // Tell Python what methods we can run from this module
 static PyMethodDef methods[] = {
@@ -976,6 +2097,8 @@ static PyMethodDef methods[] = {
 	{"long_to_datetime", long_to_datetime,
 	 METH_VARARGS, ""},
 	{"long_to_datestring", long_to_datestring,
+	 METH_VARARGS, ""},
+	{"convert_freq", (PyCFunction)convert_freq,
 	 METH_VARARGS, ""},
 	{NULL, NULL}
 };
