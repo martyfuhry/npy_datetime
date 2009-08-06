@@ -715,7 +715,6 @@ datestruct long_to_datestruct(long long dlong, int frequency)
 		hour    = hms.hour;
 		minute  = hms.minute;
 		second  = hms.second;
-		usecond = msecond * 1000;
 	} else if (frequency == FR_us) {
 		ymdstruct ymd;
 		hmsstruct hms;
@@ -723,12 +722,13 @@ datestruct long_to_datestruct(long long dlong, int frequency)
 			ymd = long_to_ymdstruct(dlong / 86400000000LL);
 			hms = long_to_hmsstruct(dlong / 1000000LL);
 			msecond = (dlong / 1000) % 1000;
-			usecond = msecond * 1000LL + dlong % 1000LL;
+			usecond = dlong % 1000LL;
 		} else {
 			ymd = long_to_ymdstruct((dlong - 86399999999LL) / 86400000000LL);
 			hms = long_to_hmsstruct((dlong - 999999LL) / 1000000LL);
-			msecond = (1000 + (dlong / 1000) % 1000) % 1000;
-			usecond = (1000000LL + (dlong % 1000000)) % 1000000;
+			usecond = ((1000000LL + (dlong % 1000000)) % 1000000);
+			msecond = usecond / 1000;
+			usecond = usecond % 1000;
 		}
 		year    = ymd.year;
 		month   = ymd.month;
@@ -830,7 +830,7 @@ long_to_datetime(PyObject *self, PyObject *args)
 		// Create the PyDateTime Object as result
 		result = PyDateTime_FromDateAndTime(dstruct.year, dstruct.month,
 				 dstruct.day, dstruct.hour, dstruct.minute, dstruct.second,
-				 dstruct.usecond);
+				 dstruct.msecond * 1000 + dstruct.usecond);
 	}
 	else
 	{
@@ -952,7 +952,8 @@ long_to_datestring(PyObject *self, PyObject *args)
 			char hour[2];
 			char minute[2];
 			char second[2];
-			char usecond[24];
+			char msecond[3];
+			char usecond[3];
 				
 			sprintf(year,   "%04d", dstruct.year);
 			sprintf(month,  "%02d", dstruct.month);
@@ -960,10 +961,22 @@ long_to_datestring(PyObject *self, PyObject *args)
 			sprintf(hour,   "%02d", dstruct.hour);
 			sprintf(minute, "%02d", dstruct.minute);
 			sprintf(second, "%02d", dstruct.second);
-			result = PyString_FromFormat("%s-%s-%s %s:%s:%s.%d", 
+			sprintf(msecond, "%03d", dstruct.msecond);
+			sprintf(usecond, "%03d", dstruct.usecond);
+			if ((dstruct.usecond) || (dstruct.msecond))
+			{
+				result = PyString_FromFormat("%s-%s-%s %s:%s:%s.%s%s", 
 					 year, month, day, 
-					 hour, minute, second,
-					 dstruct.usecond);
+					 hour, minute, second, 
+					 msecond, usecond);
+				//result = PyString_FromFormat("ms: %s -- us: %s", msecond, usecond);
+			}
+			else 
+			{
+				result = PyString_FromFormat("%s-%s-%s %s:%s:%s", 
+					 year, month, day, 
+					 hour, minute, second);
+			}
 		}
 	}
 	else
@@ -1014,20 +1027,51 @@ static long DtoB_WeekendToFriday(long absdate, int day_of_week) {
 static long long as_freq_D2Y(long long dlong)
 {
 	ymdstruct ymd = long_to_ymdstruct(dlong);
-	return ymd.year;
+	return ymd.year - 1970;
 }
 static long long as_freq_D2M(long long dlong)
 {
 	ymdstruct ymd = long_to_ymdstruct(dlong);
-	return ymd.month;
+	return ymd.month + (ymd.year - 1970) * 12 - 1;
 }
 static long long as_freq_D2W(long long dlong)
 {
-	return dlong;
+	// convert to the previous Sunday
+	int dotw = day_of_week(dlong);
+	if (dlong < 0)
+		return (dlong - dotw) / 7;
+	else
+		return (dlong + 4) / 7;
 }
 static long long as_freq_D2B(long long dlong)
 {
-	return dlong;
+	int dotw = day_of_week(dlong);
+	// Pre epoch
+	if (dlong < 0)
+	{
+		// To get beyond Sunday, Dec 28, 1969
+		if (dlong < -4) {
+			// Offset by 1 for Sundays
+			if (dotw)
+				return ((dlong + 7 - dotw) / 7) * 5 - (6 - dotw) - 3;
+			else
+				return ((dlong + 7 - dotw) / 7) * 5 - (6 - dotw) - 2;
+		} else {
+			// Offset by 1 for Sundays
+			if (dotw)
+				return -4 + dotw;
+			else
+				return -3; // Sunday, Dec 28, 1969
+		}
+	// Post epoch
+	} else {
+		// To get to Sunday, Jan 4, 1970
+		// number of weeks * 5 + dotw [0-6] - Saturdays + 1 for offset
+		if (dlong > 2)
+			return ((dlong - dotw) / 7) * 5 + dotw - (dotw / 6) + 1;
+		else 
+			return dotw - 4 - (dotw / 6);
+	}
 }
 static long long as_freq_D2h(long long dlong)
 {
@@ -1067,543 +1111,612 @@ static long long as_freq_D2as(long long dlong)
 }
 
 // *************** From Year *************** //
+static long long as_freq_Y2D(long long dlong)
+{
+	long long absdays = absdays_from_ymd(1970 + dlong, 1, 1);
+	return absdays;
+}
 static long long as_freq_Y2M(long long dlong)
 {
 	return dlong * 12;
 }
 static long long as_freq_Y2W(long long dlong)
 {
-	return dlong;
+	return as_freq_D2W(as_freq_Y2D(dlong));
 }
 static long long as_freq_Y2B(long long dlong)
 {
-	return dlong;
-}
-static long long as_freq_Y2D(long long dlong)
-{
-	return dlong;
+	return as_freq_D2B(as_freq_Y2D(dlong));
 }
 static long long as_freq_Y2h(long long dlong)
 {
-	return dlong;
+	return as_freq_Y2D(dlong) * 24;
 }
 static long long as_freq_Y2m(long long dlong)
 {
-	return dlong;
+	return as_freq_Y2D(dlong) * 1440;
 }
 static long long as_freq_Y2s(long long dlong)
 {
-	return dlong;
+	return as_freq_Y2D(dlong) * 86400;
 }
 static long long as_freq_Y2ms(long long dlong)
 {
-	return dlong;
+	return as_freq_Y2D(dlong) * 86400000LL;
 }
 static long long as_freq_Y2us(long long dlong)
 {
-	return dlong;
+	return as_freq_Y2D(dlong) * 86400000000LL;
 }
 static long long as_freq_Y2ns(long long dlong)
 {
-	return dlong;
+	return as_freq_Y2D(dlong) * 86400000000000LL;
 }
 static long long as_freq_Y2ps(long long dlong)
 {
-	return dlong;
+	return as_freq_Y2D(dlong) * 86400000000000000LL;
 }
 static long long as_freq_Y2fs(long long dlong)
 {
-	return dlong;
+	return as_freq_Y2D(dlong) * 86400000000000000000LL;
 }
 static long long as_freq_Y2as(long long dlong)
 {
-	return dlong;
+	return as_freq_Y2D(dlong) * 86400000000000000000000LL;
 }
 
 // *************** From Month *************** //
-static long long as_freq_M2Y(long long dlong)
-{
-	return dlong;
-}
+// Taken from TimeSeries
 static long long as_freq_M2D(long long dlong)
 {
-	return dlong;
+	long long absdays;
+	long y;
+	long m;
+
+	if (dlong < 0) {
+		y = (dlong + 1) / 12 - 1;
+		m = 12 + (dlong + 1) % 12;
+		if (!m) {   m = 12;   }
+		absdays = absdays_from_ymd(1970 + y, m, 1);
+		return absdays;
+	} else {
+		y = (dlong) / 12;
+		m =  dlong % 12 + 1;
+		absdays = absdays_from_ymd(1970 + y, m, 1);
+		return absdays;
+	}
+}
+static long long as_freq_M2Y(long long dlong)
+{
+	if (dlong < 0)
+		return (dlong + 1) / 12 - 1;
+	return dlong / 12;
 }
 static long long as_freq_M2W(long long dlong)
 {
-	return dlong;
+	return as_freq_D2W(as_freq_M2D(dlong));
 }
 static long long as_freq_M2B(long long dlong)
 {
-	return dlong;
+	return as_freq_D2B(as_freq_M2D(dlong));
 }
 static long long as_freq_M2h(long long dlong)
 {
-	return dlong;
+	return as_freq_D2h(as_freq_M2D(dlong));
 }
 static long long as_freq_M2m(long long dlong)
 {
-	return dlong;
+	return as_freq_D2m(as_freq_M2D(dlong));
 }
 static long long as_freq_M2s(long long dlong)
 {
-	return dlong;
+	return as_freq_D2s(as_freq_M2D(dlong));
 }
 static long long as_freq_M2ms(long long dlong)
 {
-	return dlong;
+	return as_freq_D2ms(as_freq_M2D(dlong));
 }
 static long long as_freq_M2us(long long dlong)
 {
-	return dlong;
+	return as_freq_D2us(as_freq_M2D(dlong));
 }
 static long long as_freq_M2ns(long long dlong)
 {
-	return dlong;
+	return as_freq_D2ns(as_freq_M2D(dlong));
 }
 static long long as_freq_M2ps(long long dlong)
 {
-	return dlong;
+	return as_freq_D2ps(as_freq_M2D(dlong));
 }
 static long long as_freq_M2fs(long long dlong)
 {
-	return dlong;
+	return as_freq_D2fs(as_freq_M2D(dlong));
 }
 static long long as_freq_M2as(long long dlong)
 {
-	return dlong;
+	return as_freq_D2as(as_freq_M2D(dlong));
 }
 
 // *************** From Week *************** //
+static long long as_freq_W2D(long long dlong)
+{
+	return (dlong * 7) - 4;
+}
 static long long as_freq_W2Y(long long dlong)
 {
-	return dlong;
+	return as_freq_D2Y(as_freq_W2D(dlong));
 }
 static long long as_freq_W2M(long long dlong)
 {
-	return dlong;
+	return as_freq_D2M(as_freq_W2D(dlong));
 }
 static long long as_freq_W2B(long long dlong)
 {
-	return dlong;
-}
-static long long as_freq_W2D(long long dlong)
-{
-	return dlong;
+	return as_freq_D2B(as_freq_W2D(dlong));
 }
 static long long as_freq_W2h(long long dlong)
 {
-	return dlong;
+	return as_freq_D2h(as_freq_W2D(dlong));
 }
 static long long as_freq_W2m(long long dlong)
 {
-	return dlong;
+	return as_freq_D2m(as_freq_W2D(dlong));
 }
 static long long as_freq_W2s(long long dlong)
 {
-	return dlong;
+	return as_freq_D2s(as_freq_W2D(dlong));
 }
 static long long as_freq_W2ms(long long dlong)
 {
-	return dlong;
+	return as_freq_D2ms(as_freq_W2D(dlong));
 }
 static long long as_freq_W2us(long long dlong)
 {
-	return dlong;
+	return as_freq_D2us(as_freq_W2D(dlong));
 }
 static long long as_freq_W2ns(long long dlong)
 {
-	return dlong;
+	return as_freq_D2ns(as_freq_W2D(dlong));
 }
 static long long as_freq_W2ps(long long dlong)
 {
-	return dlong;
+	return as_freq_D2ps(as_freq_W2D(dlong));
 }
 static long long as_freq_W2fs(long long dlong)
 {
-	return dlong;
+	return as_freq_D2fs(as_freq_W2D(dlong));
 }
 static long long as_freq_W2as(long long dlong)
 {
-	return dlong;
+	return as_freq_D2as(as_freq_W2D(dlong));
 }
 
 // *************** From Business Day *************** //
+static long long as_freq_B2D(long long dlong)
+{
+	if (dlong < 0) {
+		// Special Case
+		if (dlong > -7)
+			return dlong + (dlong / 4) * 2;
+		else
+			return 7 * ((dlong - 1) / 5) + ((dlong - 1) % 5) + 1;
+	} else {
+		// Special Case
+		if (dlong < 3)
+			return dlong + (dlong / 2) * 2;
+		else
+			return 7 * ((dlong + 3) / 5) + ((dlong + 3) % 5) - 3;
+	}
+}
 static long long as_freq_B2Y(long long dlong)
 {
-	return dlong;
+	return as_freq_D2Y(as_freq_B2D(dlong));
 }
 static long long as_freq_B2M(long long dlong)
 {
-	return dlong;
+	return as_freq_D2M(as_freq_B2D(dlong));
 }
 static long long as_freq_B2W(long long dlong)
 {
-	return dlong;
-}
-static long long as_freq_B2D(long long dlong)
-{
-	return dlong;
+	return as_freq_D2W(as_freq_B2D(dlong));
 }
 static long long as_freq_B2h(long long dlong)
 {
-	return dlong;
+	return as_freq_D2h(as_freq_B2D(dlong));
 }
 static long long as_freq_B2m(long long dlong)
 {
-	return dlong;
+	return as_freq_D2m(as_freq_B2D(dlong));
 }
 static long long as_freq_B2s(long long dlong)
 {
-	return dlong;
+	return as_freq_D2s(as_freq_B2D(dlong));
 }
 static long long as_freq_B2ms(long long dlong)
 {
-	return dlong;
+	return as_freq_D2ms(as_freq_B2D(dlong));
 }
 static long long as_freq_B2us(long long dlong)
 {
-	return dlong;
+	return as_freq_D2us(as_freq_B2D(dlong));
 }
 static long long as_freq_B2ns(long long dlong)
 {
-	return dlong;
+	return as_freq_D2ns(as_freq_B2D(dlong));
 }
 static long long as_freq_B2ps(long long dlong)
 {
-	return dlong;
+	return as_freq_D2ps(as_freq_B2D(dlong));
 }
 static long long as_freq_B2fs(long long dlong)
 {
-	return dlong;
+	return as_freq_D2fs(as_freq_B2D(dlong));
 }
 static long long as_freq_B2as(long long dlong)
 {
-	return dlong;
+	return as_freq_D2as(as_freq_B2D(dlong));
 }
 
 // *************** From Hour *************** //
+static long long as_freq_h2D(long long dlong)
+{
+	if (dlong < 0)
+		return dlong / 24 - 1;
+	return dlong / 24;
+}
 static long long as_freq_h2Y(long long dlong)
 {
-	return dlong;
+	return as_freq_D2Y(as_freq_h2D(dlong));
 }
 static long long as_freq_h2M(long long dlong)
 {
-	return dlong;
+	return as_freq_D2M(as_freq_h2D(dlong));
 }
 static long long as_freq_h2W(long long dlong)
 {
-	return dlong;
+	return as_freq_D2W(as_freq_h2D(dlong));
 }
 static long long as_freq_h2B(long long dlong)
 {
-	return dlong;
+	return as_freq_D2B(as_freq_h2D(dlong));
 }
-static long long as_freq_h2D(long long dlong)
-{
-	return dlong;
-}
+// these are easier to think about with a simple calculation
 static long long as_freq_h2m(long long dlong)
 {
-	return dlong;
+	return dlong * 60;
 }
 static long long as_freq_h2s(long long dlong)
 {
-	return dlong;
+	return dlong * 3600;
 }
 static long long as_freq_h2ms(long long dlong)
 {
-	return dlong;
+	return dlong * 3600000;
 }
 static long long as_freq_h2us(long long dlong)
 {
-	return dlong;
+	return dlong * 3600000000LL;
 }
 static long long as_freq_h2ns(long long dlong)
 {
-	return dlong;
+	return dlong * 3600000000000LL;
 }
 static long long as_freq_h2ps(long long dlong)
 {
-	return dlong;
+	return dlong * 3600000000000000LL;
 }
 static long long as_freq_h2fs(long long dlong)
 {
-	return dlong;
+	return dlong * 3600000000000000000LL;
 }
 static long long as_freq_h2as(long long dlong)
 {
-	return dlong;
+	return dlong * 3600000000000000000000LL;
 }
 
 // *************** From Minute *************** //
+static long long as_freq_m2D(long long dlong)
+{
+	if (dlong < 0)
+		return dlong / 1440 - 1;
+	return dlong / 1440;
+}
 static long long as_freq_m2Y(long long dlong)
 {
-	return dlong;
+	return as_freq_D2Y(as_freq_m2D(dlong));
 }
 static long long as_freq_m2M(long long dlong)
 {
-	return dlong;
+	return as_freq_D2M(as_freq_m2D(dlong));
 }
 static long long as_freq_m2W(long long dlong)
 {
-	return dlong;
+	return as_freq_D2W(as_freq_m2D(dlong));
 }
 static long long as_freq_m2B(long long dlong)
 {
-	return dlong;
+	return as_freq_D2B(as_freq_m2D(dlong));
 }
+// these are easier to think about with a simple calculation
 static long long as_freq_m2h(long long dlong)
 {
-	return dlong;
-}
-static long long as_freq_m2D(long long dlong)
-{
-	return dlong;
+	if (dlong < 0)
+		return dlong / 60 - 1;
+	return dlong / 60;
 }
 static long long as_freq_m2s(long long dlong)
 {
-	return dlong;
+	return dlong * 60;
 }
 static long long as_freq_m2ms(long long dlong)
 {
-	return dlong;
+	return dlong * 60000;
 }
 static long long as_freq_m2us(long long dlong)
 {
-	return dlong;
+	return dlong * 60000000LL;
 }
 static long long as_freq_m2ns(long long dlong)
 {
-	return dlong;
+	return dlong * 60000000000LL;
 }
 static long long as_freq_m2ps(long long dlong)
 {
-	return dlong;
+	return dlong * 60000000000000LL;
 }
 static long long as_freq_m2fs(long long dlong)
 {
-	return dlong;
+	return dlong * 60000000000000000LL;
 }
 static long long as_freq_m2as(long long dlong)
 {
-	return dlong;
+	return dlong * 60000000000000000000LL;
 }
 
 // *************** From Second *************** //
+static long long as_freq_s2D(long long dlong)
+{
+	if (dlong < 0)
+		return dlong / 86400 - 1;
+	return dlong / 86400;
+}
 static long long as_freq_s2Y(long long dlong)
 {
-	return dlong;
+	return as_freq_D2Y(as_freq_s2D(dlong));
 }
 static long long as_freq_s2M(long long dlong)
 {
-	return dlong;
+	return as_freq_D2M(as_freq_s2D(dlong));
 }
 static long long as_freq_s2W(long long dlong)
 {
-	return dlong;
+	return as_freq_D2W(as_freq_s2D(dlong));
 }
 static long long as_freq_s2B(long long dlong)
 {
-	return dlong;
+	return as_freq_D2B(as_freq_s2D(dlong));
 }
+// these are easier to think about with a simple calculation
 static long long as_freq_s2h(long long dlong)
 {
-	return dlong;
+	if (dlong < 0)
+		return dlong / 3600 - 1;
+	return dlong / 3600;
 }
 static long long as_freq_s2m(long long dlong)
 {
-	return dlong;
-}
-static long long as_freq_s2D(long long dlong)
-{
-	return dlong;
+	if (dlong < 0)
+		return dlong / 60 - 1;
+	return dlong / 60;
 }
 static long long as_freq_s2ms(long long dlong)
 {
-	return dlong;
+	return dlong * 1000;
 }
 static long long as_freq_s2us(long long dlong)
 {
-	return dlong;
+	return dlong * 1000000;
 }
 static long long as_freq_s2ns(long long dlong)
 {
-	return dlong;
+	return dlong * 1000000000LL;
 }
 static long long as_freq_s2ps(long long dlong)
 {
-	return dlong;
+	return dlong * 1000000000000LL;
 }
 static long long as_freq_s2fs(long long dlong)
 {
-	return dlong;
+	return dlong * 1000000000000000LL;
 }
 static long long as_freq_s2as(long long dlong)
 {
-	return dlong;
+	return dlong * 1000000000000000000LL;
 }
 
 // *************** From Millisecond *************** //
+static long long as_freq_ms2D(long long dlong)
+{
+	if (dlong < 0)
+		return dlong / 86400000 - 1;
+	return dlong / 86400000;
+}
 static long long as_freq_ms2Y(long long dlong)
 {
-	return dlong;
+	return as_freq_D2Y(as_freq_ms2D(dlong));
 }
 static long long as_freq_ms2M(long long dlong)
 {
-	return dlong;
+	return as_freq_D2M(as_freq_ms2D(dlong));
 }
 static long long as_freq_ms2W(long long dlong)
 {
-	return dlong;
+	return as_freq_D2W(as_freq_ms2D(dlong));
 }
 static long long as_freq_ms2B(long long dlong)
 {
-	return dlong;
+	return as_freq_D2B(as_freq_ms2D(dlong));
 }
+// these are easier to think about with a simple calculation
 static long long as_freq_ms2h(long long dlong)
 {
-	return dlong;
+	if (dlong < 0)
+		return dlong / 3600000 - 1;
+	return dlong / 3600000;
 }
 static long long as_freq_ms2m(long long dlong)
 {
-	return dlong;
+	if (dlong < 0)
+		return dlong / 60000 - 1;
+	return dlong / 60000;
 }
 static long long as_freq_ms2s(long long dlong)
 {
-	return dlong;
-}
-static long long as_freq_ms2D(long long dlong)
-{
-	return dlong;
+	if (dlong < 0)
+		return dlong / 1000 - 1;
+	return dlong / 1000;
 }
 static long long as_freq_ms2us(long long dlong)
 {
-	return dlong;
+	return dlong * 1000;
 }
 static long long as_freq_ms2ns(long long dlong)
 {
-	return dlong;
+	return dlong * 1000000;
 }
 static long long as_freq_ms2ps(long long dlong)
 {
-	return dlong;
+	return dlong * 1000000000LL;
 }
 static long long as_freq_ms2fs(long long dlong)
 {
-	return dlong;
+	return dlong * 1000000000000LL;
 }
 static long long as_freq_ms2as(long long dlong)
 {
-	return dlong;
+	return dlong * 1000000000000000LL;
 }
 
 // *************** From Microsecond *************** //
+static long long as_freq_us2D(long long dlong)
+{
+	if (dlong < 0)
+		return dlong / 86400000000 - 1;
+	return dlong / 86400000000;
+}
 static long long as_freq_us2Y(long long dlong)
 {
-	return dlong;
+	return as_freq_D2Y(as_freq_us2D(dlong));
 }
 static long long as_freq_us2M(long long dlong)
 {
-	return dlong;
+	return as_freq_D2M(as_freq_us2D(dlong));
 }
 static long long as_freq_us2W(long long dlong)
 {
-	return dlong;
+	return as_freq_D2W(as_freq_us2D(dlong));
 }
 static long long as_freq_us2B(long long dlong)
 {
-	return dlong;
+	return as_freq_D2B(as_freq_us2D(dlong));
 }
+// these are easier to think about with a simple calculation
 static long long as_freq_us2h(long long dlong)
 {
-	return dlong;
+	if (dlong < 0)
+		return dlong / 3600000000LL - 1;
+	return dlong / 3600000000LL;
 }
 static long long as_freq_us2m(long long dlong)
 {
-	return dlong;
+	if (dlong < 0)
+		return dlong / 60000000LL - 1;
+	return dlong / 60000000LL;
 }
 static long long as_freq_us2s(long long dlong)
 {
-	return dlong;
+	if (dlong < 0)
+		return dlong / 1000000LL - 1;
+	return dlong / 1000000LL;
 }
 static long long as_freq_us2ms(long long dlong)
 {
-	return dlong;
-}
-static long long as_freq_us2D(long long dlong)
-{
-	return dlong;
+	// We're losing precision on XX:XX:XX.xx1 times for some reason
+	//  can't find a fix, so here's a cheap hack...
+	if ((dlong < 0) && ((dlong % 10000) != -9000))
+		return dlong / 1000LL - 1;
+	return dlong / 1000LL;
 }
 static long long as_freq_us2ns(long long dlong)
 {
-	return dlong;
+	return dlong * 1000000LL;
 }
 static long long as_freq_us2ps(long long dlong)
 {
-	return dlong;
+	return dlong * 1000000000LL;
 }
 static long long as_freq_us2fs(long long dlong)
 {
-	return dlong;
+	return dlong * 1000000000000LL;
 }
 static long long as_freq_us2as(long long dlong)
 {
-	return dlong;
+	return dlong * 1000000000000000LL;
 }
 
 // *************** From Nanosecond *************** //
+static long long as_freq_ns2D(long long dlong)
+{
+	return as_freq_s2D(dlong) * 1000000000LL;
+}
 static long long as_freq_ns2Y(long long dlong)
 {
-	return dlong;
+	return as_freq_D2Y(as_freq_ns2D(dlong));
 }
 static long long as_freq_ns2M(long long dlong)
 {
-	return dlong;
+	return as_freq_D2M(as_freq_ns2D(dlong));
 }
 static long long as_freq_ns2W(long long dlong)
 {
-	return dlong;
+	return as_freq_D2W(as_freq_ns2D(dlong));
 }
 static long long as_freq_ns2B(long long dlong)
 {
-	return dlong;
+	return as_freq_D2B(as_freq_ns2D(dlong));
 }
+// these are easier to think about with a simple calculation
 static long long as_freq_ns2h(long long dlong)
 {
-	return dlong;
+	return as_freq_D2h(as_freq_ns2D(dlong));
 }
 static long long as_freq_ns2m(long long dlong)
 {
-	return dlong;
+	return as_freq_D2m(as_freq_ns2D(dlong));
 }
 static long long as_freq_ns2s(long long dlong)
 {
-	return dlong;
+	return as_freq_D2s(as_freq_ns2D(dlong));
 }
 static long long as_freq_ns2ms(long long dlong)
 {
-	return dlong;
+	return as_freq_D2ms(as_freq_ns2D(dlong));
 }
 static long long as_freq_ns2us(long long dlong)
 {
-	return dlong;
-}
-static long long as_freq_ns2D(long long dlong)
-{
-	return dlong;
+	return as_freq_D2us(as_freq_ns2D(dlong));
 }
 static long long as_freq_ns2ps(long long dlong)
 {
-	return dlong;
+	return as_freq_D2ps(as_freq_ns2D(dlong));
 }
 static long long as_freq_ns2fs(long long dlong)
 {
-	return dlong;
+	return as_freq_D2fs(as_freq_ns2D(dlong));
 }
 static long long as_freq_ns2as(long long dlong)
 {
-	return dlong;
+	return as_freq_D2as(as_freq_ns2D(dlong));
 }
 
 // *************** From Picosecond *************** //
@@ -1623,6 +1736,7 @@ static long long as_freq_ps2B(long long dlong)
 {
 	return dlong;
 }
+// these are easier to think about with a simple calculation
 static long long as_freq_ps2h(long long dlong)
 {
 	return dlong;
@@ -1677,6 +1791,7 @@ static long long as_freq_fs2B(long long dlong)
 {
 	return dlong;
 }
+// these are easier to think about with a simple calculation
 static long long as_freq_fs2h(long long dlong)
 {
 	return dlong;
@@ -1731,6 +1846,7 @@ static long long as_freq_as2B(long long dlong)
 {
 	return dlong;
 }
+// these are easier to think about with a simple calculation
 static long long as_freq_as2h(long long dlong)
 {
 	return dlong;
@@ -1937,13 +2053,14 @@ static long long as_freq_to_long(long long dlong, int ifreq, int ofreq)
 			switch (ofreq) {
 				case FR_Y: return as_freq_us2Y(dlong); break;
 				case FR_M: return as_freq_us2M(dlong); break;
-				case FR_W: return as_freq_us2D(dlong); break;
+				case FR_W: return as_freq_us2W(dlong); break;
 				case FR_B: return as_freq_us2B(dlong); break;
 				case FR_D: return as_freq_us2D(dlong); break;
 				case FR_h: return as_freq_us2h(dlong); break;
 				case FR_m: return as_freq_us2m(dlong); break;
 				case FR_s: return as_freq_us2s(dlong); break;
 				case FR_ms: return as_freq_us2ms(dlong); break;
+				case FR_ns: return as_freq_us2ns(dlong); break;
 				case FR_ps: return as_freq_us2ps(dlong); break;
 				case FR_fs: return as_freq_us2fs(dlong); break;
 				case FR_as: return as_freq_us2as(dlong); break;
