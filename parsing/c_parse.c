@@ -404,8 +404,6 @@ long long datetime_to_long(PyObject* datetime, int frequency)
 	// The absolute number of days since 1970
 	long long absdays = absdays_from_ymd(year, month, day);
 
-	// 1 for leap, 0 for no leap
-
 	// These calculations depend on the frequency
 
 	if (frequency == FR_Y) {
@@ -1886,9 +1884,8 @@ static long long as_freq_as2D(long long dlong)
 
 // Convert (dlong, ifreq) to a new date based on ofreq
 // Returns the long value to represent the date with the ofreq
-static long long as_freq_to_long(long long dlong, int ifreq, int ofreq)
+static long long get_conversion_ftn(int ifreq, int ofreq)
 {
-	long long result = 0;
 	if (ifreq == ofreq)
 		return -1;// Error out
 
@@ -1898,240 +1895,240 @@ static long long as_freq_to_long(long long dlong, int ifreq, int ofreq)
 		case FR_Y:
 			switch (ofreq) 
 			{
-				case FR_M: return as_freq_Y2M(dlong); break;
-				case FR_W: return as_freq_Y2W(dlong); break;
-				case FR_B: return as_freq_Y2B(dlong); break;
-				case FR_D: return as_freq_Y2D(dlong); break;
-				case FR_h: return as_freq_Y2h(dlong); break;
-				case FR_m: return as_freq_Y2m(dlong); break;
-				case FR_s: return as_freq_Y2s(dlong); break;
-				case FR_ms:return as_freq_Y2ms(dlong); break;
-				case FR_us:return as_freq_Y2us(dlong); break;
-				case FR_ns:return as_freq_Y2ns(dlong); break;
-				case FR_ps:return as_freq_Y2ps(dlong); break;
-				case FR_fs:return as_freq_Y2fs(dlong); break;
-				case FR_as:return as_freq_Y2as(dlong); break;
+				case FR_M: return &as_freq_Y2M; break;
+				case FR_W: return &as_freq_Y2W; break;
+				case FR_B: return &as_freq_Y2B; break;
+				case FR_D: return &as_freq_Y2D; break;
+				case FR_h: return &as_freq_Y2h; break;
+				case FR_m: return &as_freq_Y2m; break;
+				case FR_s: return &as_freq_Y2s; break;
+				case FR_ms:return &as_freq_Y2ms; break;
+				case FR_us:return &as_freq_Y2us; break;
+				case FR_ns:return &as_freq_Y2ns; break;
+				case FR_ps:return &as_freq_Y2ps; break;
+				case FR_fs:return &as_freq_Y2fs; break;
+				case FR_as:return &as_freq_Y2as; break;
 			}
 			break;
 		case FR_M:
 			switch (ofreq) {
-				case FR_Y: return as_freq_M2Y(dlong); break;
-				case FR_W: return as_freq_M2W(dlong); break;
-				case FR_B: return as_freq_M2B(dlong); break;
-				case FR_D: return as_freq_M2D(dlong); break;
-				case FR_h: return as_freq_M2h(dlong); break; 
-				case FR_m: return as_freq_M2m(dlong); break; 
-				case FR_s: return as_freq_M2s(dlong); break;
-				case FR_ms: return as_freq_M2ms(dlong); break;
-				case FR_us: return as_freq_M2us(dlong); break;
-				case FR_ns: return as_freq_M2ns(dlong); break;
-				case FR_ps: return as_freq_M2ps(dlong); break;
-				case FR_fs: return as_freq_M2fs(dlong); break;
-				case FR_as: return as_freq_M2as(dlong); break;
+				case FR_Y: return &as_freq_M2Y; break;
+				case FR_W: return &as_freq_M2W; break;
+				case FR_B: return &as_freq_M2B; break;
+				case FR_D: return &as_freq_M2D; break;
+				case FR_h: return &as_freq_M2h; break; 
+				case FR_m: return &as_freq_M2m; break; 
+				case FR_s: return &as_freq_M2s; break;
+				case FR_ms: return &as_freq_M2ms; break;
+				case FR_us: return &as_freq_M2us; break;
+				case FR_ns: return &as_freq_M2ns; break;
+				case FR_ps: return &as_freq_M2ps; break;
+				case FR_fs: return &as_freq_M2fs; break;
+				case FR_as: return &as_freq_M2as; break;
 			}
 			break;
 		case FR_W:
 			switch (ofreq) {
-				case FR_Y: return as_freq_W2Y(dlong); break;
-				case FR_M: return as_freq_W2M(dlong); break;
-				case FR_B: return as_freq_W2B(dlong); break;
-				case FR_D: return as_freq_W2D(dlong); break;
-				case FR_h: return as_freq_W2h(dlong); break;
-				case FR_m: return as_freq_W2m(dlong); break;
-				case FR_s: return as_freq_W2s(dlong); break;
-				case FR_ms: return as_freq_W2ms(dlong); break;
-				case FR_us: return as_freq_W2us(dlong); break;
-				case FR_ns: return as_freq_W2ns(dlong); break;
-				case FR_ps: return as_freq_W2ps(dlong); break;
-				case FR_fs: return as_freq_W2fs(dlong); break;
-				case FR_as: return as_freq_W2as(dlong); break;
+				case FR_Y: return &as_freq_W2Y; break;
+				case FR_M: return &as_freq_W2M; break;
+				case FR_B: return &as_freq_W2B; break;
+				case FR_D: return &as_freq_W2D; break;
+				case FR_h: return &as_freq_W2h; break;
+				case FR_m: return &as_freq_W2m; break;
+				case FR_s: return &as_freq_W2s; break;
+				case FR_ms: return &as_freq_W2ms; break;
+				case FR_us: return &as_freq_W2us; break;
+				case FR_ns: return &as_freq_W2ns; break;
+				case FR_ps: return &as_freq_W2ps; break;
+				case FR_fs: return &as_freq_W2fs; break;
+				case FR_as: return &as_freq_W2as; break;
 			}
 			break;
 		case FR_B:
 			switch (ofreq) {
-				case FR_Y: return as_freq_B2Y(dlong); break;
-				case FR_M: return as_freq_B2M(dlong); break;  
-				case FR_W: return as_freq_B2W(dlong); break;
-				case FR_D: return as_freq_B2D(dlong); break;
-				case FR_h: return as_freq_B2h(dlong); break;
-				case FR_m: return as_freq_B2m(dlong); break;
-				case FR_s: return as_freq_B2s(dlong); break;
-				case FR_ms: return as_freq_B2ms(dlong); break;
-				case FR_us: return as_freq_B2us(dlong); break;
-				case FR_ns: return as_freq_B2ns(dlong); break;
-				case FR_ps: return as_freq_B2ps(dlong); break;
-				case FR_fs: return as_freq_B2fs(dlong); break;
-				case FR_as: return as_freq_B2as(dlong); break;
+				case FR_Y: return &as_freq_B2Y; break;
+				case FR_M: return &as_freq_B2M; break;  
+				case FR_W: return &as_freq_B2W; break;
+				case FR_D: return &as_freq_B2D; break;
+				case FR_h: return &as_freq_B2h; break;
+				case FR_m: return &as_freq_B2m; break;
+				case FR_s: return &as_freq_B2s; break;
+				case FR_ms: return &as_freq_B2ms; break;
+				case FR_us: return &as_freq_B2us; break;
+				case FR_ns: return &as_freq_B2ns; break;
+				case FR_ps: return &as_freq_B2ps; break;
+				case FR_fs: return &as_freq_B2fs; break;
+				case FR_as: return &as_freq_B2as; break;
 			}
 		break;
 		case FR_D:
 			switch (ofreq) {
-				case FR_Y: return as_freq_D2Y(dlong); break;
-				case FR_M: return as_freq_D2M(dlong); break;
-				case FR_W: return as_freq_D2W(dlong); break;
-				case FR_B: return as_freq_D2B(dlong); break;
-				case FR_h: return as_freq_D2h(dlong); break;
-				case FR_m: return as_freq_D2m(dlong); break;
-				case FR_s: return as_freq_D2s(dlong); break;
-				case FR_ms: return as_freq_D2ms(dlong); break;
-				case FR_us: return as_freq_D2us(dlong); break;
-				case FR_ns: return as_freq_D2ns(dlong); break;
-				case FR_ps: return as_freq_D2ps(dlong); break;
-				case FR_fs: return as_freq_D2fs(dlong); break;
-				case FR_as: return as_freq_D2as(dlong); break;
+				case FR_Y: return &as_freq_D2Y; break;
+				case FR_M: return &as_freq_D2M; break;
+				case FR_W: return &as_freq_D2W; break;
+				case FR_B: return &as_freq_D2B; break;
+				case FR_h: return &as_freq_D2h; break;
+				case FR_m: return &as_freq_D2m; break;
+				case FR_s: return &as_freq_D2s; break;
+				case FR_ms: return &as_freq_D2ms; break;
+				case FR_us: return &as_freq_D2us; break;
+				case FR_ns: return &as_freq_D2ns; break;
+				case FR_ps: return &as_freq_D2ps; break;
+				case FR_fs: return &as_freq_D2fs; break;
+				case FR_as: return &as_freq_D2as; break;
 			}
 			break;
 		case FR_h:
 			switch (ofreq) {
-				case FR_Y: return as_freq_h2Y(dlong); break;
-				case FR_M: return as_freq_h2M(dlong); break;
-				case FR_W: return as_freq_h2W(dlong); break;
-				case FR_B: return as_freq_h2B(dlong); break;
-				case FR_D: return as_freq_h2D(dlong); break;
-				case FR_m: return as_freq_h2m(dlong); break;
-				case FR_s: return as_freq_h2s(dlong); break;
-				case FR_ms: return as_freq_h2ms(dlong); break;
-				case FR_us: return as_freq_h2us(dlong); break;
-				case FR_ns: return as_freq_h2ns(dlong); break;
-				case FR_ps: return as_freq_h2ps(dlong); break;
-				case FR_fs: return as_freq_h2fs(dlong); break;
-				case FR_as: return as_freq_h2as(dlong); break;
+				case FR_Y: return &as_freq_h2Y; break;
+				case FR_M: return &as_freq_h2M; break;
+				case FR_W: return &as_freq_h2W; break;
+				case FR_B: return &as_freq_h2B; break;
+				case FR_D: return &as_freq_h2D; break;
+				case FR_m: return &as_freq_h2m; break;
+				case FR_s: return &as_freq_h2s; break;
+				case FR_ms: return &as_freq_h2ms; break;
+				case FR_us: return &as_freq_h2us; break;
+				case FR_ns: return &as_freq_h2ns; break;
+				case FR_ps: return &as_freq_h2ps; break;
+				case FR_fs: return &as_freq_h2fs; break;
+				case FR_as: return &as_freq_h2as; break;
 			}
 			break;
 		case FR_m:
 			switch (ofreq) {
-				case FR_Y: return as_freq_m2Y(dlong); break;
-				case FR_M: return as_freq_m2M(dlong); break;
-				case FR_W: return as_freq_m2W(dlong); break;
-				case FR_B: return as_freq_m2B(dlong); break;
-				case FR_D: return as_freq_m2D(dlong); break;
-				case FR_h: return as_freq_m2h(dlong); break;
-				case FR_s: return as_freq_m2s(dlong); break;
-				case FR_us: return as_freq_m2us(dlong); break;
-				case FR_ms: return as_freq_m2ms(dlong); break;
-				case FR_ns: return as_freq_m2ns(dlong); break;
-				case FR_ps: return as_freq_m2ps(dlong); break;
-				case FR_fs: return as_freq_m2fs(dlong); break;
-				case FR_as: return as_freq_m2as(dlong); break;
+				case FR_Y: return &as_freq_m2Y; break;
+				case FR_M: return &as_freq_m2M;
+				case FR_W: return &as_freq_m2W; break;
+				case FR_B: return &as_freq_m2B; break;
+				case FR_D: return &as_freq_m2D; break;
+				case FR_h: return &as_freq_m2h; break;
+				case FR_s: return &as_freq_m2s; break;
+				case FR_us: return &as_freq_m2us; break;
+				case FR_ms: return &as_freq_m2ms; break;
+				case FR_ns: return &as_freq_m2ns; break;
+				case FR_ps: return &as_freq_m2ps; break;
+				case FR_fs: return &as_freq_m2fs; break;
+				case FR_as: return &as_freq_m2as; break;
 			}
 			break;
 		case FR_s:
 			switch (ofreq) {
-				case FR_Y: return as_freq_s2Y(dlong); break;
-				case FR_M: return as_freq_s2M(dlong); break;
-				case FR_W: return as_freq_s2W(dlong); break;
-				case FR_B: return as_freq_s2B(dlong); break;
-				case FR_D: return as_freq_s2D(dlong); break;
-				case FR_h: return as_freq_s2h(dlong); break;
-				case FR_m: return as_freq_s2m(dlong); break;
-				case FR_ms: return as_freq_s2ms(dlong); break;
-				case FR_us: return as_freq_s2us(dlong); break;
-				case FR_ns: return as_freq_s2ns(dlong); break;
-				case FR_ps: return as_freq_s2ps(dlong); break;
-				case FR_fs: return as_freq_s2fs(dlong); break;
-				case FR_as: return as_freq_s2as(dlong); break;
+				case FR_Y: return &as_freq_s2Y; break;
+				case FR_M: return &as_freq_s2M; break;
+				case FR_W: return &as_freq_s2W; break;
+				case FR_B: return &as_freq_s2B; break;
+				case FR_D: return &as_freq_s2D; break;
+				case FR_h: return &as_freq_s2h; break;
+				case FR_m: return &as_freq_s2m; break;
+				case FR_ms: return &as_freq_s2ms; break;
+				case FR_us: return &as_freq_s2us; break;
+				case FR_ns: return &as_freq_s2ns; break;
+				case FR_ps: return &as_freq_s2ps; break;
+				case FR_fs: return &as_freq_s2fs; break;
+				case FR_as: return &as_freq_s2as; break;
 			}
 			break;
 		case FR_ms:
 			switch (ofreq) {
-				case FR_Y: return as_freq_ms2Y(dlong); break;
-				case FR_M: return as_freq_ms2M(dlong); break;
-				case FR_W: return as_freq_ms2W(dlong); break;
-				case FR_B: return as_freq_ms2B(dlong); break;
-				case FR_D: return as_freq_ms2D(dlong); break;
-				case FR_h: return as_freq_ms2h(dlong); break;
-				case FR_m: return as_freq_ms2m(dlong); break;
-				case FR_s: return as_freq_ms2s(dlong); break;
-				case FR_us: return as_freq_ms2us(dlong); break;
-				case FR_ns: return as_freq_ms2ns(dlong); break;
-				case FR_ps: return as_freq_ms2ps(dlong); break;
-				case FR_fs: return as_freq_ms2fs(dlong); break;
-				case FR_as: return as_freq_ms2as(dlong); break;
+				case FR_Y: return &as_freq_ms2Y; break;
+				case FR_M: return &as_freq_ms2M; break;
+				case FR_W: return &as_freq_ms2W; break;
+				case FR_B: return &as_freq_ms2B; break;
+				case FR_D: return &as_freq_ms2D; break;
+				case FR_h: return &as_freq_ms2h; break;
+				case FR_m: return &as_freq_ms2m; break;
+				case FR_s: return &as_freq_ms2s; break;
+				case FR_us: return &as_freq_ms2us; break;
+				case FR_ns: return &as_freq_ms2ns; break;
+				case FR_ps: return &as_freq_ms2ps; break;
+				case FR_fs: return &as_freq_ms2fs; break;
+				case FR_as: return &as_freq_ms2as; break;
 			}
 			break;
 		case FR_us:
 			switch (ofreq) {
-				case FR_Y: return as_freq_us2Y(dlong); break;
-				case FR_M: return as_freq_us2M(dlong); break;
-				case FR_W: return as_freq_us2W(dlong); break;
-				case FR_B: return as_freq_us2B(dlong); break;
-				case FR_D: return as_freq_us2D(dlong); break;
-				case FR_h: return as_freq_us2h(dlong); break;
-				case FR_m: return as_freq_us2m(dlong); break;
-				case FR_s: return as_freq_us2s(dlong); break;
-				case FR_ms: return as_freq_us2ms(dlong); break;
-				case FR_ns: return as_freq_us2ns(dlong); break;
-				case FR_ps: return as_freq_us2ps(dlong); break;
-				case FR_fs: return as_freq_us2fs(dlong); break;
-				case FR_as: return as_freq_us2as(dlong); break;
+				case FR_Y: return &as_freq_us2Y; break;
+				case FR_M: return &as_freq_us2M; break;
+				case FR_W: return &as_freq_us2W; break;
+				case FR_B: return &as_freq_us2B; break;
+				case FR_D: return &as_freq_us2D; break;
+				case FR_h: return &as_freq_us2h; break;
+				case FR_m: return &as_freq_us2m; break;
+				case FR_s: return &as_freq_us2s; break;
+				case FR_ms: return &as_freq_us2ms; break;
+				case FR_ns: return &as_freq_us2ns; break;
+				case FR_ps: return &as_freq_us2ps; break;
+				case FR_fs: return &as_freq_us2fs; break;
+				case FR_as: return &as_freq_us2as; break;
 			}
 			break;
 		case FR_ns:
 			switch (ofreq) {
-				case FR_Y: return as_freq_ns2Y(dlong); break;
-				case FR_M: return as_freq_ns2M(dlong); break;
-				case FR_W: return as_freq_ns2W(dlong); break;
-				case FR_B: return as_freq_ns2B(dlong); break;
-				case FR_D: return as_freq_ns2D(dlong); break;
-				case FR_h: return as_freq_ns2h(dlong); break;
-				case FR_m: return as_freq_ns2m(dlong); break;
-				case FR_s: return as_freq_ns2s(dlong); break;
-				case FR_ms: return as_freq_ns2ms(dlong); break;
-				case FR_us: return as_freq_ns2us(dlong); break;
-				case FR_ps: return as_freq_ns2ps(dlong); break;
-				case FR_fs: return as_freq_ns2fs(dlong); break;
-				case FR_as: return as_freq_ns2as(dlong); break;
+				case FR_Y: return &as_freq_ns2Y; break;
+				case FR_M: return &as_freq_ns2M; break;
+				case FR_W: return &as_freq_ns2W; break;
+				case FR_B: return &as_freq_ns2B; break;
+				case FR_D: return &as_freq_ns2D; break;
+				case FR_h: return &as_freq_ns2h; break;
+				case FR_m: return &as_freq_ns2m; break;
+				case FR_s: return &as_freq_ns2s; break;
+				case FR_ms: return &as_freq_ns2ms; break;
+				case FR_us: return &as_freq_ns2us; break;
+				case FR_ps: return &as_freq_ns2ps; break;
+				case FR_fs: return &as_freq_ns2fs; break;
+				case FR_as: return &as_freq_ns2as; break;
 			}
 			break;
 		case FR_ps:
 			switch (ofreq) {
-				case FR_Y: return as_freq_ps2Y(dlong); break;
-				case FR_M: return as_freq_ps2M(dlong); break;
-				case FR_W: return as_freq_ps2W(dlong); break;
-				case FR_B: return as_freq_ps2B(dlong); break;
-				case FR_D: return as_freq_ps2D(dlong); break;
-				case FR_h: return as_freq_ps2h(dlong); break;
-				case FR_m: return as_freq_ps2m(dlong); break;
-				case FR_s: return as_freq_ps2s(dlong); break;
-				case FR_ms: return as_freq_ps2ms(dlong); break;
-				case FR_us: return as_freq_ps2us(dlong); break;
-				case FR_ns: return as_freq_ps2ns(dlong); break;
-				case FR_fs: return as_freq_ps2fs(dlong); break;
-				case FR_as: return as_freq_ps2as(dlong); break;
+				case FR_Y: return &as_freq_ps2Y; break;
+				case FR_M: return &as_freq_ps2M; break;
+				case FR_W: return &as_freq_ps2W; break;
+				case FR_B: return &as_freq_ps2B; break;
+				case FR_D: return &as_freq_ps2D; break;
+				case FR_h: return &as_freq_ps2h; break;
+				case FR_m: return &as_freq_ps2m; break;
+				case FR_s: return &as_freq_ps2s; break;
+				case FR_ms: return &as_freq_ps2ms; break;
+				case FR_us: return &as_freq_ps2us; break;
+				case FR_ns: return &as_freq_ps2ns; break;
+				case FR_fs: return &as_freq_ps2fs; break;
+				case FR_as: return &as_freq_ps2as; break;
 			}
 			break;
 		case FR_fs:
 			switch (ofreq) {
-				case FR_Y: return as_freq_fs2Y(dlong); break;
-				case FR_M: return as_freq_fs2M(dlong); break;
-				case FR_W: return as_freq_fs2W(dlong); break;
-				case FR_B: return as_freq_fs2B(dlong); break;
-				case FR_D: return as_freq_fs2D(dlong); break;
-				case FR_h: return as_freq_fs2h(dlong); break;
-				case FR_m: return as_freq_fs2m(dlong); break;
-				case FR_s: return as_freq_fs2s(dlong); break;
-				case FR_ms: return as_freq_fs2ms(dlong); break;
-				case FR_us: return as_freq_fs2us(dlong); break;
-				case FR_ns: return as_freq_fs2ns(dlong); break;
-				case FR_ps: return as_freq_fs2ps(dlong); break;
-				case FR_as: return as_freq_fs2as(dlong); break;
+				case FR_Y: return &as_freq_fs2Y; break;
+				case FR_M: return &as_freq_fs2M; break;
+				case FR_W: return &as_freq_fs2W; break;
+				case FR_B: return &as_freq_fs2B; break;
+				case FR_D: return &as_freq_fs2D; break;
+				case FR_h: return &as_freq_fs2h; break;
+				case FR_m: return &as_freq_fs2m; break;
+				case FR_s: return &as_freq_fs2s; break;
+				case FR_ms: return &as_freq_fs2ms; break;
+				case FR_us: return &as_freq_fs2us; break;
+				case FR_ns: return &as_freq_fs2ns; break;
+				case FR_ps: return &as_freq_fs2ps; break;
+				case FR_as: return &as_freq_fs2as; break;
 			}
 			break;
 		case FR_as:
 			switch (ofreq) {
-				case FR_Y: return as_freq_as2Y(dlong); break;
-				case FR_M: return as_freq_as2M(dlong); break;
-				case FR_W: return as_freq_as2W(dlong); break;
-				case FR_B: return as_freq_as2B(dlong); break;
-				case FR_D: return as_freq_as2D(dlong); break;
-				case FR_h: return as_freq_as2h(dlong); break;
-				case FR_m: return as_freq_as2m(dlong); break;
-				case FR_s: return as_freq_as2s(dlong); break;
-				case FR_ms: return as_freq_as2ms(dlong); break;
-				case FR_us: return as_freq_as2us(dlong); break;
-				case FR_ns: return as_freq_as2ns(dlong); break;
-				case FR_ps: return as_freq_as2ps(dlong); break;
-				case FR_fs: return as_freq_as2fs(dlong); break;
+				case FR_Y: return &as_freq_as2Y; break;
+				case FR_M: return &as_freq_as2M; break;
+				case FR_W: return &as_freq_as2W; break;
+				case FR_B: return &as_freq_as2B; break;
+				case FR_D: return &as_freq_as2D; break;
+				case FR_h: return &as_freq_as2h; break;
+				case FR_m: return &as_freq_as2m; break;
+				case FR_s: return &as_freq_as2s; break;
+				case FR_ms: return &as_freq_as2ms; break;
+				case FR_us: return &as_freq_as2us; break;
+				case FR_ns: return &as_freq_as2ns; break;
+				case FR_ps: return &as_freq_as2ps; break;
+				case FR_fs: return &as_freq_as2fs; break;
 			}
 			break;
 		default:
@@ -2140,26 +2137,41 @@ static long long as_freq_to_long(long long dlong, int ifreq, int ofreq)
 			// error out
 		}
 	
-	return result;
+	// error out
+	return -1;
+}
+
+// Uses get_conversion_ftn to find which function to return
+static long long as_freq_to_long(long long dlong, int ifreq, int ofreq)
+{
+	// Needs more error checking, but it works for now
+	if (ifreq == ofreq)
+		return -1;// Error out
+
+	// grab conversion function based on ifreq and ofreq
+	long long (*conversion_ftn)(long long) = get_conversion_ftn(ifreq, ofreq);
+	// return conversion function ran with dlong
+	return (*conversion_ftn)(dlong);
 }
 
 // Takes a long and an in frequency ( to emulate a date )
 //  and an out frequency to learn the conversion to run
+// OR takes a PyList and an in frequency and outputs a PyList as the second freq
 // Returns a long
 static PyObject *
 convert_freq(PyObject *self, PyObject *args)
 {
-	PyObject *long_arg = NULL;    // string or datetime
+	PyObject *main_arg = NULL;    // string or datetime
 	PyObject *ifreq_arg = NULL;	  // in frequency as string
 	PyObject *ofreq_arg = NULL;	  // out frequency as string
 	PyObject *result   = NULL;	  // long result
 
-	long long dlong = 0;          // Stores the long_arg
+	long long dlong = 0;          // Stores the main_arg
 	int ifreq = FR_ERR;			  // freq_arg is a PyObject to be parsed to freq
 	int ofreq = FR_ERR;			  // freq_arg is a PyObject to be parsed to freq
 
-	// Parse out long_arg & freq_arg
-	if (!PyArg_ParseTuple(args, "OOO", &long_arg, &ifreq_arg, &ofreq_arg))
+	// Parse out main_arg & freq_arg
+	if (!PyArg_ParseTuple(args, "OOO", &main_arg, &ifreq_arg, &ofreq_arg))
 		return NULL;
 	// Parse the in frequency into an int so we can use it easily
 	if ((ifreq = freq_to_int(PyString_AsString(ifreq_arg))) == FR_ERR)
@@ -2176,21 +2188,44 @@ convert_freq(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	// Make sure long_arg is not NULL
-	if (!long_arg)
+	// Make sure main_arg is not NULL
+	if (!main_arg)
 	{
 		PyErr_SetString(PyExc_TypeError, "no date provided.");
 		return NULL;
 	}
-	if (PyLong_Check(long_arg))
+	// For Scalars
+	if (PyLong_Check(main_arg))
     {
 		// XXX PyINCREF here?
-		// Convert long_arg to a long long
-		dlong = PyLong_AsLongLong(long_arg);
+		// Convert main_arg to a long long
+		dlong = PyLong_AsLongLong(main_arg);
 	
 		// All the basic tests are out of the way, now we need to figure out 
 		//  which frequency conversion to run based on the ofreq
 		result = PyLong_FromLongLong(as_freq_to_long(dlong, ifreq, ofreq));
+	}
+	// For lists
+	else if (PyList_Check(main_arg))
+	{
+		// Result needs to be a list size of main arg
+		result = PyList_New(0);
+		// get the pointer ftn here
+		// We shouldn't just use as_freq_to_long because that checks
+		//  each ifreq and ofreq. We'll always be using the same ifreq
+		//  and ofreq, so we just need that one function...
+		long long (*conversion_ftn)(long long) = get_conversion_ftn(ifreq, ofreq);
+		// Iterate through main_arg
+		Py_ssize_t idx = 0;
+		for (idx; idx < PyList_Size(main_arg); idx++)
+		{
+			// extract correct value of main arg
+			long long dlong = PyLong_AsLongLong(PyList_GetItem(main_arg, idx));
+			long long resultant_dlong = (*conversion_ftn)(dlong);
+			// put calculated dlong into result
+			PyList_Append(result,
+			  PyLong_FromLongLong(resultant_dlong));
+		}
 	}
 	else
 	{
