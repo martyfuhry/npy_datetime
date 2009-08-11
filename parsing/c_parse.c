@@ -180,6 +180,8 @@ long year_offset(register long year)
         return year*365 + (year-3)/4 - (year-99)/100 + (year-399)/400;
 }    
 
+/*
+ * UNUSED FUNCTION
 static
 int week_from_ady(long absdate, int day, int year)
 {
@@ -210,6 +212,7 @@ int week_from_ady(long absdate, int day, int year)
 
     return week;
 }
+*/
 
 
 // Modified version of mxDateTime function
@@ -2212,8 +2215,8 @@ convert_freq(PyObject *self, PyObject *args)
 		//  and ofreq, so we just need that one function...
 		long long (*conversion_ftn)(long long) = get_conversion_ftn(ifreq, ofreq);
 		// Iterate through main_arg
-		Py_ssize_t idx = 0;
-		for (idx; idx < PyList_Size(main_arg); idx++)
+		Py_ssize_t idx;
+		for (idx = 0; idx < PyList_Size(main_arg); idx++)
 		{
 			// extract correct value of main arg
 			long long dlong = PyLong_AsLongLong(PyList_GetItem(main_arg, idx));
@@ -2367,6 +2370,7 @@ break;
 		}
 		default: return "error"; break;
 	}
+	return "error";
 }
 
 // TimeDelta long -> timedelta is very simple.
@@ -2487,8 +2491,8 @@ timedelta_plus_timedelta(PyObject *self, PyObject *args)
 		}
 
 		// Iterate through long_arg1
-		Py_ssize_t idx = 0;
-		for (idx; idx < PyList_Size(long_arg1); idx++)
+		Py_ssize_t idx;
+		for (idx = 0; idx < PyList_Size(long_arg1); idx++)
 		{
 			// extract correct value of main arg
 			long long tlong_member = 
@@ -2540,8 +2544,8 @@ timedelta_plus_timedelta(PyObject *self, PyObject *args)
 		}
 
 		// Iterate through list_1
-		Py_ssize_t idx = 0;
-		for (idx; idx < PyList_Size(long_arg1); idx++)
+		Py_ssize_t idx;
+		for (idx = 0; idx < PyList_Size(long_arg1); idx++)
 		{
 			// extract correct value of main arg
 			long long tlong_member1 = PyLong_AsLongLong(
@@ -2658,8 +2662,8 @@ timedelta_minus_timedelta(PyObject *self, PyObject *args)
 		}
 
 		// Iterate through long_arg1
-		Py_ssize_t idx = 0;
-		for (idx; idx < PyList_Size(long_arg1); idx++)
+		Py_ssize_t idx;
+		for (idx = 0; idx < PyList_Size(long_arg1); idx++)
 		{
 			// extract correct value of main arg
 			long long tlong_member = 
@@ -2711,8 +2715,8 @@ timedelta_minus_timedelta(PyObject *self, PyObject *args)
 		}
 
 		// Iterate through list_1
-		Py_ssize_t idx = 0;
-		for (idx; idx < PyList_Size(long_arg1); idx++)
+		Py_ssize_t idx;
+		for (idx = 0; idx < PyList_Size(long_arg1); idx++)
 		{
 			// extract correct value of main arg
 			long long tlong_member1 = PyLong_AsLongLong(
