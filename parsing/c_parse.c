@@ -82,27 +82,6 @@ int freq_to_int(char* freq)
 static PyObject *callback = NULL;
 
 static PyObject *
-test_callback()
-{
-	PyObject *result = NULL;
-	PyObject *arglist = NULL;
-	int a = 1, b = 2;
-	arglist = Py_BuildValue("ii", a, b);
-	if (callback == NULL)
-	{
-		PyErr_SetString(PyExc_TypeError, "callback not set.");
-		return NULL;
-	}
-	result = PyEval_CallObject(callback, arglist);
-	Py_DECREF(arglist);
-	if (result == NULL)
-		return NULL;
-	// Use result HERE
-	
-	return result;
-}
-
-static PyObject *
 set_callback(PyObject *dummy, PyObject *args)
 {
 	PyObject *result = NULL;
@@ -996,7 +975,7 @@ long_to_datestring(PyObject *self, PyObject *args)
 
 // Taken from TimeSeries //
 // helpers for frequency conversion routines
-
+/*
 static long DtoB_weekday(long fromDate) { return (((fromDate) / 7) * 5) + (fromDate)%7; }
 
 static long DtoB_WeekendToMonday(long absdate, int day_of_week) {
@@ -1016,6 +995,8 @@ static long DtoB_WeekendToFriday(long absdate, int day_of_week) {
     }
     return DtoB_weekday(absdate);
 }
+*/
+
 
 // Taken from TimeSeries //
 // conversion routines for frequencies
@@ -1101,11 +1082,15 @@ static long long as_freq_D2ps(long long dlong)
 }
 static long long as_freq_D2fs(long long dlong)
 {
-	return dlong * 86400000000000000000LL;
+	return 0;
+	// should throw an error...
+	//return dlong * 86400000000000000000LL;
 }
 static long long as_freq_D2as(long long dlong)
 {
-	return dlong * 86400000000000000000000LL;
+	return 0;
+	// should throw an error...
+	//return dlong * 86400000000000000000000LL;
 }
 
 // *************** From Year *************** //
@@ -1156,11 +1141,15 @@ static long long as_freq_Y2ps(long long dlong)
 }
 static long long as_freq_Y2fs(long long dlong)
 {
-	return as_freq_Y2D(dlong) * 86400000000000000000LL;
+	return 0;
+	// should return an error
+	// return as_freq_Y2D(dlong) * 86400000000000000000LL;
 }
 static long long as_freq_Y2as(long long dlong)
 {
-	return as_freq_Y2D(dlong) * 86400000000000000000000LL;
+	return 0;
+	// should return an error
+	// return as_freq_Y2D(dlong) * 86400000000000000000000LL;
 }
 
 // *************** From Month *************** //
@@ -1409,7 +1398,9 @@ static long long as_freq_h2fs(long long dlong)
 }
 static long long as_freq_h2as(long long dlong)
 {
-	return dlong * 3600000000000000000000LL;
+	return 0;
+	// should return an error...	
+	//return dlong * 3600000000000000000000LL;
 }
 
 // *************** From Minute *************** //
@@ -1468,7 +1459,9 @@ static long long as_freq_m2fs(long long dlong)
 }
 static long long as_freq_m2as(long long dlong)
 {
-	return dlong * 60000000000000000000LL;
+	return 0;
+	// should return an error...
+	//return dlong * 60000000000000000000LL;
 }
 
 // *************** From Second *************** //
@@ -1882,12 +1875,15 @@ static long long as_freq_as2D(long long dlong)
 	return dlong;
 }
 
+static long long NO_FUNC(long long empty)
+{ return empty; }
+
 // Convert (dlong, ifreq) to a new date based on ofreq
 // Returns the long value to represent the date with the ofreq
-static long long get_conversion_ftn(int ifreq, int ofreq)
+static long long (*get_conversion_ftn(int ifreq, int ofreq)) (long long)
 {
 	if (ifreq == ofreq)
-		return -1;// Error out
+		return &NO_FUNC;// Error out
 
 	// Switch to decide which routine to run
 	switch (ifreq) 
@@ -2132,13 +2128,13 @@ static long long get_conversion_ftn(int ifreq, int ofreq)
 			}
 			break;
 		default:
-			return -1;
+			return &NO_FUNC;
 			break;
 			// error out
 		}
 	
 	// error out
-	return -1;
+	return &NO_FUNC;
 }
 
 // Uses get_conversion_ftn to find which function to return
@@ -2234,6 +2230,526 @@ convert_freq(PyObject *self, PyObject *args)
 	}
 	return result;
 }
+
+//==================================================
+// TimeDelta
+//==================================================
+
+static char* timedelta_to_cstring(long long tlong, int freq)
+{
+	char result[64];
+	switch (freq)
+	{
+		case FR_Y:
+		{
+			sprintf(result, "%lld Years", tlong); 
+			break;
+		}
+		case FR_M:
+	  	{	
+			if (tlong > 11)
+			{
+				sprintf(result, "%lld Years, %d Days", 
+						tlong / 12, 
+						month_offset[0][tlong % 12]); 
+			}
+			else
+			{
+				sprintf(result, "%d Days", 
+						month_offset[0][tlong % 12]); 
+			}
+			break;
+		}
+		case FR_W: 
+		{
+			if (tlong > 51)
+			{
+				sprintf(result, "%lli Years, %lli Days",
+					tlong / 52,
+					(tlong % 52) * 7);
+			}
+			else
+			{
+				sprintf(result, "%lli Days", tlong * 7);
+			}
+			break;
+		}
+		case FR_B:
+		{
+
+		}
+		case FR_D:
+		{
+			if (tlong > 364)
+				sprintf(result, "%lli Years, %lli Days",
+						tlong / 365,
+						tlong % 365);
+			else
+				sprintf(result, "%lli Days", tlong);
+			break;
+		}
+		case FR_h:
+		{
+			// 8760 hours in 365 days
+			if (tlong > 8759)
+			{
+				long long years = as_freq_h2Y(tlong);
+				sprintf(result, "%lli Years, %lli Days %lli:00:00",
+						years, (tlong / 24) % 365, tlong % 24);
+				break;
+			}
+			else if (tlong > 23)
+			{
+				sprintf(result, "%lli Days, %lli:00:00",
+						tlong / 24, tlong % 24);
+			}
+			else
+			{
+				sprintf(result, "%lli:00:00", tlong);
+			}
+			break;
+		}
+		case FR_m:
+		{
+			// 525600 minutes in 365 days
+			if (tlong > 525600)
+			{
+				long long years = as_freq_m2Y(tlong);
+				long long days  = as_freq_m2D(tlong % 525600);
+				sprintf(result, "%lli Years, %lli Days, %lli:%lli:00",
+						years, days, (tlong / 60) % 24, tlong % 60);
+				break;
+			}
+			else if (tlong > 1440)
+			{
+				long long days = as_freq_m2D(tlong % 525600);
+				sprintf(result, "%lli Days, %lli:%lli:00",
+						days, (tlong / 60) % 24, tlong % 60);
+				break;
+			}
+			else
+			{
+				sprintf(result, "%02lli:%02lli:00",
+						(tlong / 60) % 24, tlong % 60);
+			}
+			break;
+		}
+		case FR_s:
+		{
+			// How many Years
+			// How many Days
+			// How many hours
+			// How many minutes
+		}
+		case FR_ms:
+		{
+
+		}
+		case FR_us:
+		{
+
+		}
+		case FR_ns:
+		{
+
+		}
+		case FR_ps:
+		{
+
+		}
+		case FR_fs:
+		{
+
+		}
+		case FR_as:
+		{
+break;
+		}
+		default: return "error"; break;
+	}
+}
+
+// TimeDelta long -> timedelta is very simple.
+// TimeDelta TimeDelta -> long is also simple.
+// TimeDelta TimeDelta -> String is less simple.
+//  Takes a long long value for timedelta and 
+//   a frequency as it's frequency
+//  Returns a string formatted:
+//  X Years, Y Days xx:xx:xx.xxxxxx
+static PyObject *
+timedelta_to_string(PyObject *self, PyObject *args)
+{
+	PyObject *long_arg = NULL;
+	PyObject *freq_arg = NULL;
+	
+	long long tlong = 0;
+	int freq = FR_ERR;
+
+	// Parse out long_arg & freq_arg
+	if (!PyArg_ParseTuple(args, "OO", &long_arg, &freq_arg))
+		return NULL;
+
+	if (PyLong_Check(long_arg))
+		tlong = PyLong_AsLongLong(long_arg);
+	else
+		PyErr_SetString(PyExc_TypeError, "invalid long entry.");
+	
+	if ((freq = freq_to_int(PyString_AsString(freq_arg))) == FR_ERR)
+	{
+		// If the frequency is invalid, set an error and return null
+		PyErr_SetString(PyExc_TypeError, "invalid frequency.");
+		return NULL;
+	}
+	return PyString_FromString(timedelta_to_cstring(tlong, freq));
+}
+// TimeDelta + TimeDelta is interesting
+// if it's one TimeDelta and one TimeDelta
+//  return one TimeDelta
+// if it's one list and one TimeDelta
+//  return one (list + that TimeDelta)
+// if it's one list and one list
+//  return one (list + that list)
+static PyObject *
+timedelta_plus_timedelta(PyObject *self, PyObject *args)
+{
+	PyObject *long_arg1 = NULL;
+	PyObject *freq_arg1 = NULL;
+	PyObject *long_arg2 = NULL;
+	PyObject *freq_arg2 = NULL;
+	
+	long long tlong1 = 0;
+	long long tlong2 = 0;
+	int freq1 = FR_ERR;
+	int freq2 = FR_ERR;
+
+	// Parse out long_arg & freq_arg
+	if (!PyArg_ParseTuple(args, "OOOO", &long_arg1, &freq_arg1,
+							            &long_arg2, &freq_arg2))
+		return NULL;
+
+	// Parse out both freqs	
+	if (((freq1 = freq_to_int(PyString_AsString(freq_arg1))) == FR_ERR) ||
+		((freq2 = freq_to_int(PyString_AsString(freq_arg2))) == FR_ERR))
+	{
+		// If the frequency is invalid, set an error and return null
+		PyErr_SetString(PyExc_TypeError, "invalid frequency.");
+		return NULL;
+	}
+	
+	// TimeDelta + TimeDelta
+	if (PyLong_Check(long_arg1) && PyLong_Check(long_arg2))
+	{
+		tlong1 = PyLong_AsLongLong(long_arg1);
+		tlong2 = PyLong_AsLongLong(long_arg2);
+
+		if (freq1 == freq2)
+			return PyLong_FromLongLong(tlong1 + tlong2);
+		// Freq1 is more precise than freq2
+		//  change freq2 to freq1
+		else if (freq1 < freq2)
+		{
+			long long (* conversion_ftn) (long long) = 
+					get_conversion_ftn(freq2, freq1);
+			return PyLong_FromLongLong(conversion_ftn(tlong2) + tlong1);
+		}
+		// Freq1 is less precise than freq2
+		//  change freq1 to freq2
+		else
+		{
+			long long (* conversion_ftn) (long long) = 
+					get_conversion_ftn(freq1, freq2);
+			return PyLong_FromLongLong(conversion_ftn(tlong1) + tlong2);
+		}
+	}
+	// List + TimeDelta
+	else if (PyList_Check(long_arg1) && PyLong_Check(long_arg2))
+	{
+		long long tlong_scalar = PyLong_AsLongLong(long_arg2);
+		PyObject* result = PyList_New(0);
+		long long (*conversion_ftn) (long long) = NULL;
+		int smaller_arg = 0; // which argument is more precise?
+
+		// Freq1 is more precise than freq2
+		//  change freq2 to freq1
+		if (freq1 < freq2)
+		{
+			conversion_ftn = get_conversion_ftn(freq2, freq1);
+			// list is more precise than scalar
+			smaller_arg = 0;
+		}
+		// Freq1 is less precise than freq2
+		//  change freq1 to freq2
+		else
+		{
+			conversion_ftn = get_conversion_ftn(freq1, freq2);
+			// scalar is more precise than list
+			smaller_arg = 1;
+		}
+
+		// Iterate through long_arg1
+		Py_ssize_t idx = 0;
+		for (idx; idx < PyList_Size(long_arg1); idx++)
+		{
+			// extract correct value of main arg
+			long long tlong_member = 
+					PyLong_AsLongLong(PyList_GetItem(long_arg1, idx));
+			long long tlong_result;
+			if (conversion_ftn)
+			{
+				if (smaller_arg)
+					tlong_result = (*conversion_ftn)(tlong_member) 
+							+ tlong_scalar;
+				else
+					tlong_result = (*conversion_ftn)(tlong_scalar) 
+							+ tlong_member;
+			}
+			else
+				tlong_result = tlong_member + tlong2;
+			// put calculated dlong into result
+			PyList_Append(result,
+			  PyLong_FromLongLong(tlong_result));
+		}
+		return result;
+	}
+	// List + List
+	else if (PyList_Check(long_arg1) && PyList_Check(long_arg2))
+	{
+		if (PyList_Size(long_arg1) != PyList_Size(long_arg2))
+		{
+			PyErr_SetString(PyExc_TypeError, "list sizes must be equal.");
+			return NULL;
+		}
+
+		PyObject* result = PyList_New(0);
+		long long (*conversion_ftn)(long long) = NULL;
+		int smaller_arg = 0; // which argument is smaller?
+
+		// Freq1 is more precise than freq2
+		//  change freq2 to freq1
+		if (freq1 < freq2)
+		{
+			conversion_ftn= get_conversion_ftn(freq2, freq1);
+			smaller_arg = 0;
+		}
+		// Freq1 is less precise than freq2
+		//  change freq1 to freq2
+		else
+		{
+			conversion_ftn = get_conversion_ftn(freq1, freq2);
+			smaller_arg = 1;
+		}
+
+		// Iterate through list_1
+		Py_ssize_t idx = 0;
+		for (idx; idx < PyList_Size(long_arg1); idx++)
+		{
+			// extract correct value of main arg
+			long long tlong_member1 = PyLong_AsLongLong(
+					PyList_GetItem(long_arg1, idx));
+			long long tlong_member2 = PyLong_AsLongLong(
+					PyList_GetItem(long_arg2, idx));
+			long long tlong_result;
+			if (conversion_ftn)
+			{
+				// if the second is smaller
+				if (smaller_arg)
+				{
+					tlong_result = (*conversion_ftn)(tlong_member2) 
+							+ tlong_member1;
+				}
+				else
+				{
+					tlong_result = (*conversion_ftn)(tlong_member1) 
+							+ tlong_member2;
+				}
+			}
+			else
+				tlong_result = tlong1 + tlong2;
+			// put calculated dlong into result
+			PyList_Append(result,
+			  PyLong_FromLongLong(tlong_result));
+		}
+		return result;
+	}
+	else
+	{
+		PyErr_SetString(PyExc_TypeError, "invalid entries.");
+		return NULL;
+	}
+}
+
+// This is the same as td_plus_td, but minus instead...
+// This should be stacked on to plus, but I haven't decided how yet
+static PyObject *
+timedelta_minus_timedelta(PyObject *self, PyObject *args)
+{
+	PyObject *long_arg1 = NULL;
+	PyObject *freq_arg1 = NULL;
+	PyObject *long_arg2 = NULL;
+	PyObject *freq_arg2 = NULL;
+	
+	long long tlong1 = 0;
+	long long tlong2 = 0;
+	int freq1 = FR_ERR;
+	int freq2 = FR_ERR;
+
+	// Parse out long_arg & freq_arg
+	if (!PyArg_ParseTuple(args, "OOOO", &long_arg1, &freq_arg1,
+							            &long_arg2, &freq_arg2))
+		return NULL;
+
+	// Parse out both freqs	
+	if (((freq1 = freq_to_int(PyString_AsString(freq_arg1))) == FR_ERR) ||
+		((freq2 = freq_to_int(PyString_AsString(freq_arg2))) == FR_ERR))
+	{
+		// If the frequency is invalid, set an error and return null
+		PyErr_SetString(PyExc_TypeError, "invalid frequency.");
+		return NULL;
+	}
+	
+	// TimeDelta + TimeDelta
+	if (PyLong_Check(long_arg1) && PyLong_Check(long_arg2))
+	{
+		tlong1 = PyLong_AsLongLong(long_arg1);
+		tlong2 = PyLong_AsLongLong(long_arg2);
+
+		if (freq1 == freq2)
+			return PyLong_FromLongLong(tlong1 - tlong2);
+		// Freq1 is more precise than freq2
+		//  change freq2 to freq1
+		else if (freq1 < freq2)
+		{
+			long long (* conversion_ftn) (long long) = 
+					get_conversion_ftn(freq2, freq1);
+			return PyLong_FromLongLong(-conversion_ftn(tlong2) + tlong1);
+		}
+		// Freq1 is less precise than freq2
+		//  change freq1 to freq2
+		else
+		{
+			long long (* conversion_ftn) (long long) = 
+					get_conversion_ftn(freq1, freq2);
+			return PyLong_FromLongLong(conversion_ftn(tlong1) - tlong2);
+		}
+	}
+	// List + TimeDelta
+	else if (PyList_Check(long_arg1) && PyLong_Check(long_arg2))
+	{
+		long long tlong_scalar = PyLong_AsLongLong(long_arg2);
+		PyObject* result = PyList_New(0);
+		long long (*conversion_ftn) (long long) = NULL;
+		int smaller_arg = 0; // which argument is more precise?
+
+		// Freq1 is more precise than freq2
+		//  change freq2 to freq1
+		if (freq1 < freq2)
+		{
+			conversion_ftn = get_conversion_ftn(freq2, freq1);
+			// list is more precise than scalar
+			smaller_arg = 0;
+		}
+		// Freq1 is less precise than freq2
+		//  change freq1 to freq2
+		else
+		{
+			conversion_ftn = get_conversion_ftn(freq1, freq2);
+			// scalar is more precise than list
+			smaller_arg = 1;
+		}
+
+		// Iterate through long_arg1
+		Py_ssize_t idx = 0;
+		for (idx; idx < PyList_Size(long_arg1); idx++)
+		{
+			// extract correct value of main arg
+			long long tlong_member = 
+					PyLong_AsLongLong(PyList_GetItem(long_arg1, idx));
+			long long tlong_result;
+			if (conversion_ftn)
+			{
+				if (smaller_arg)
+					tlong_result = (*conversion_ftn)(tlong_member) 
+							- tlong_scalar;
+				else
+					tlong_result = -(*conversion_ftn)(tlong_scalar) 
+							+ tlong_member;
+			}
+			else
+				tlong_result = tlong_member + tlong2;
+			// put calculated dlong into result
+			PyList_Append(result,
+			  PyLong_FromLongLong(tlong_result));
+		}
+		return result;
+	}
+	// List + List
+	else if (PyList_Check(long_arg1) && PyList_Check(long_arg2))
+	{
+		if (PyList_Size(long_arg1) != PyList_Size(long_arg2))
+		{
+			PyErr_SetString(PyExc_TypeError, "list sizes must be equal.");
+			return NULL;
+		}
+
+		PyObject* result = PyList_New(0);
+		long long (*conversion_ftn)(long long) = NULL;
+		int smaller_arg = 0; // which argument is smaller?
+
+		// Freq1 is more precise than freq2
+		//  change freq2 to freq1
+		if (freq1 < freq2)
+		{
+			conversion_ftn= get_conversion_ftn(freq2, freq1);
+			smaller_arg = 0;
+		}
+		// Freq1 is less precise than freq2
+		//  change freq1 to freq2
+		else
+		{
+			conversion_ftn = get_conversion_ftn(freq1, freq2);
+			smaller_arg = 1;
+		}
+
+		// Iterate through list_1
+		Py_ssize_t idx = 0;
+		for (idx; idx < PyList_Size(long_arg1); idx++)
+		{
+			// extract correct value of main arg
+			long long tlong_member1 = PyLong_AsLongLong(
+					PyList_GetItem(long_arg1, idx));
+			long long tlong_member2 = PyLong_AsLongLong(
+					PyList_GetItem(long_arg2, idx));
+			long long tlong_result;
+			if (conversion_ftn)
+			{
+				// if the second is smaller
+				if (smaller_arg)
+				{
+					tlong_result = -(*conversion_ftn)(tlong_member2) 
+							+ tlong_member1;
+				}
+				else
+				{
+					tlong_result = (*conversion_ftn)(tlong_member1) 
+							- tlong_member2;
+				}
+			}
+			else
+				tlong_result = tlong1 - tlong2;
+			// put calculated dlong into result
+			PyList_Append(result,
+			  PyLong_FromLongLong(tlong_result));
+		}
+		return result;
+	}
+	else
+	{
+		PyErr_SetString(PyExc_TypeError, "invalid entries.");
+		return NULL;
+	}
+}
+// TimeDelta + DateTime is very interesting
+// TimeDelta - DateTime is very interesting
 //==================================================
 // Module
 //==================================================
@@ -2242,8 +2758,6 @@ convert_freq(PyObject *self, PyObject *args)
 static PyMethodDef methods[] = {
 	{"set_callback", (PyCFunction)set_callback, 
 	 METH_VARARGS, ""},
-	{"test_callback", (PyCFunction)test_callback,
-	 METH_VARARGS, ""},
 	{"date_to_long", date_to_long,
 	 METH_VARARGS, ""},
 	{"long_to_datetime", long_to_datetime,
@@ -2251,6 +2765,12 @@ static PyMethodDef methods[] = {
 	{"long_to_datestring", long_to_datestring,
 	 METH_VARARGS, ""},
 	{"convert_freq", (PyCFunction)convert_freq,
+	 METH_VARARGS, ""},
+	{"timedelta_to_string", (PyCFunction)timedelta_to_string,
+	 METH_VARARGS, ""},
+	{"timedelta_plus_timedelta", (PyCFunction)timedelta_plus_timedelta,
+	 METH_VARARGS, ""},
+	{"timedelta_minus_timedelta", (PyCFunction)timedelta_minus_timedelta,
 	 METH_VARARGS, ""},
 	{NULL, NULL}
 };
